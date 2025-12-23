@@ -381,8 +381,8 @@ def compute_retirement_metrics(
     expectativa_media_ibge = 80  # proxy simples e conservador
     anos_folga = idade_fim_recebimento - expectativa_media_ibge
 
-    data_inicio = df_renda["data"].min().date()
-    data_fim = df_renda["data"].max().date()
+    data_inicio = pd.to_datetime(df_renda["data"].min()).date()
+    data_fim = pd.to_datetime(df_renda["data"].max()).date()
 
 
     # idade real no primeiro e último pagamento
@@ -425,3 +425,4 @@ def compute_retirement_metrics(
         "data_inicio": data_inicio,
         "data_fim": data_fim,
     }
+
