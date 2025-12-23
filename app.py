@@ -575,6 +575,8 @@ class PlanejadorPage(BasePage):
         venc_sel = df_usar["Ano conversão"].astype(int).tolist()
         taxas_sel = (df_usar["Taxa real (%)"] / 100.0).astype(float).tolist()
 
+
+
         try:
             df_aloc, df_renda_otimizacao, df_fluxo_real = self.planner.montar_alocacao(
                 idade_atual=int(idade_atual),
@@ -586,13 +588,25 @@ class PlanejadorPage(BasePage):
                 taxas_reais_aa=taxas_sel,
             )
 
+            data_aposentadoria = date(
+                hoje.year + (idade_aposentadoria - idade_atual),
+                hoje.month,
+                hoje.day,
+            )
+            
+            df_plot_fluxo = df_fluxo_real.rename(
+                columns={
+                    "data_pagamento": "data",
+                    "parcela_nominal_liquida": "renda_real_liquida",
+                }
+            )
+
+            df_fluxo_pos_apos = df_plot_fluxo[
+                df_plot_fluxo["data"] >= pd.to_datetime(data_aposentadoria)
+            ].copy()
+            
             metrics = compute_retirement_metrics(
-                df_renda=df_fluxo_real.rename(
-                    columns={
-                        "data_pagamento": "data",
-                        "parcela_nominal_liquida": "renda_real_liquida",
-                    }
-                ),
+                df_renda=df_fluxo_pos_apos,
                 renda_objetivo=renda_desejada,
                 idade_atual=int(idade_atual),
                 idade_aposentadoria=int(idade_aposentadoria),
@@ -627,11 +641,6 @@ class PlanejadorPage(BasePage):
             # Linha do tempo visual
             # -----------------------------
             ano_atual = hoje.year
-            data_aposentadoria = date(
-                hoje.year + (idade_aposentadoria - idade_atual),
-                hoje.month,
-                hoje.day,
-            )
 
             eventos_timeline = [
                 {
@@ -737,7 +746,7 @@ class PlanejadorPage(BasePage):
                 </style>
 
                 <div class="timeline-wrapper">
-                    <h3 class="timeline-title">Linha do tempo da aposentadoria</h3>
+                    <div class="timeline-title">Linha do tempo da aposentadoria</div>
                     {timeline_html}
                 </div>
                 """,
@@ -787,12 +796,6 @@ class PlanejadorPage(BasePage):
         st.write(f"**Investimento total sugerido: R$ {investimento_total:,.2f}**")
 
         st.subheader("Renda mensal REAL líquida simulada")
-        df_plot_fluxo = df_fluxo_real.rename(
-            columns={
-                "data_pagamento": "data",
-                "parcela_nominal_liquida": "renda_real_liquida",
-            }
-        )
 
         fig = px.line(
             df_plot_fluxo,
@@ -800,10 +803,11 @@ class PlanejadorPage(BasePage):
             y="renda_real_liquida",title="Renda mensal real líquida durante a aposentadoria", labels={"data": "Data", "renda_real_liquida": "Renda (R$)"}, template="plotly_white", color_discrete_sequence=CUSTOM_COLORS)
         st.plotly_chart(fig, use_container_width=True)
 
-        renda_media = df_plot_fluxo["renda_real_liquida"].mean()
-        renda_min = df_plot_fluxo["renda_real_liquida"].min()
-        renda_max = df_plot_fluxo["renda_real_liquida"].max()
-        st.markdown(f"**Renda média:** R$ {renda_media:,.2f} – **mín:** R$ {renda_min:,.2f} – **máx:** R$ {renda_max:,.2f}")
+        #renda_media = df_fluxo_pos_apos["renda_real_liquida"].mean()
+        #renda_min = df_fluxo_pos_apos["renda_real_liquida"].min()
+        #renda_max = df_fluxo_pos_apos["renda_real_liquida"].max()
+        #volatilidade = df_fluxo_pos_apos["renda_real_liquida"].std() / renda_media
+        st.markdown(f"**Renda média:** R$ {metrics['renda_media']:,.2f} – **mín:** R$ {metrics['renda_min']:,.2f} – **máx:** R$ {metrics['renda_max']:,.2f}")
 
         # métricas de qualidade do ajuste
         desired = float(renda_desejada)
@@ -951,4 +955,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
