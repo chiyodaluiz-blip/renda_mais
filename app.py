@@ -738,7 +738,7 @@ class PlanejadorPage(BasePage):
                     {timeline_html}
                 </div>
                 """,
-                height=220,
+                height=100,
             )
 
 
@@ -756,7 +756,7 @@ class PlanejadorPage(BasePage):
                 </div>
 
                 """,
-                height=360,
+                height=270,
             )
             
             components.html(
@@ -941,6 +941,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
