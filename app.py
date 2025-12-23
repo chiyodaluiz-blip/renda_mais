@@ -148,109 +148,118 @@ class HomePage(BasePage):
         super().__init__(title="HOME", icon="🏠")
         self.pages_meta = pages_meta
 
+
     def render(self) -> None:
-        st.markdown("""
-        <style>
-        .landing {
-            padding-top: 10px;
-        }
-        .hero {
-            max-width: 1100px;
-            margin-bottom: 30px;
-        }
-        .hero h1 {
-            font-size: 42px;
-            font-weight: 700;
-            color: #0B1F3B;
-        }
-        .hero p {
-            font-size: 18px;
-            color: #475569;
-            margin-top: 8px;
-        }
+        components.html(
+            """
+            <style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            }
+            .container {
+                max-width: 1100px;
+                padding: 20px 10px;
+            }
+            h1 {
+                font-size: 42px;
+                color: #0B1F3B;
+                margin-bottom: 6px;
+            }
+            .subtitle {
+                font-size: 18px;
+                color: #475569;
+                margin-bottom: 32px;
+            }
+            .cards {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+                gap: 24px;
+            }
+            .card {
+                background: linear-gradient(180deg, #FFFFFF, #F6F8FB);
+                border-radius: 18px;
+                padding: 24px;
+                border: 1px solid rgba(11,31,59,0.08);
+                box-shadow: 0 10px 30px rgba(11,31,59,0.08);
+                transition: transform .18s ease, box-shadow .18s ease;
+            }
+            .card:hover {
+                transform: translateY(-6px);
+                box-shadow: 0 18px 45px rgba(11,31,59,0.14);
+            }
+            .icon {
+                width: 44px;
+                height: 44px;
+                margin-bottom: 14px;
+            }
+            .card h3 {
+                font-size: 18px;
+                margin-bottom: 6px;
+                color: #0B1F3B;
+            }
+            .card p {
+                font-size: 14px;
+                color: #475569;
+            }
+            .hint {
+                margin-top: 28px;
+                font-size: 14px;
+                color: #64748B;
+            }
+            </style>
 
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 22px;
-            max-width: 1100px;
-        }
+            <div class="container">
+                <h1>Planejamento Financeiro com Tesouro Direto</h1>
+                <div class="subtitle">
+                    Ferramentas profissionais para análise de preços, fluxo de caixa e planejamento de renda real com títulos IPCA+ e RendA+.
+                </div>
 
-        .card {
-            background: linear-gradient(180deg, #FFFFFF, #F6F8FB);
-            border-radius: 16px;
-            padding: 22px;
-            border: 1px solid rgba(11,31,59,0.08);
-            box-shadow: 0 10px 26px rgba(11,31,59,0.08);
-            transition: transform .18s ease, box-shadow .18s ease;
-        }
+                <div class="cards">
+                    <div class="card">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#1F4E79" stroke-width="2">
+                            <path d="M3 3v18h18"/>
+                            <path d="M18 9l-5 5-4-4-3 3"/>
+                        </svg>
+                        <h3>Histórico de Preços</h3>
+                        <p>Visualize séries históricas de PU e taxas reais por título e vencimento.</p>
+                    </div>
 
-        .card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 18px 40px rgba(11,31,59,0.14);
-        }
+                    <div class="card">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#1F4E79" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="14"/>
+                            <path d="M8 20h8"/>
+                        </svg>
+                        <h3>Simulador de Fluxo (RendA+)</h3>
+                        <p>Simule fluxos mensais de renda, juros, amortização e imposto.</p>
+                    </div>
 
-        .card svg {
-            width: 42px;
-            height: 42px;
-            margin-bottom: 14px;
-        }
+                    <div class="card">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#1F4E79" stroke-width="2">
+                            <circle cx="12" cy="7" r="4"/>
+                            <path d="M5.5 21a6.5 6.5 0 0113 0"/>
+                        </svg>
+                        <h3>Planejador de Aposentadoria</h3>
+                        <p>Calcule a alocação ótima em RendA+ para garantir renda real estável.</p>
+                    </div>
 
-        .card h3 {
-            font-size: 18px;
-            margin-bottom: 6px;
-            color: #0B1F3B;
-        }
+                    <div class="card">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#1F4E79" stroke-width="2">
+                            <path d="M12 1v22"/>
+                            <path d="M5 6h14"/>
+                            <path d="M5 18h14"/>
+                        </svg>
+                        <h3>Precificador</h3>
+                        <p>Compare preços teóricos vs. Tesouro Direto para IPCA+ e RendA+.</p>
+                    </div>
+                </div>
 
-        .card p {
-            font-size: 14px;
-            color: #475569;
-        }
-
-        .hint {
-            margin-top: 26px;
-            font-size: 14px;
-            color: #64748B;
-        }
-        </style>
-
-        <div class="landing">
-          <div class="hero">
-            <h1>Planejamento Financeiro com Tesouro Direto</h1>
-            <p>Ferramentas profissionais para análise de preços, fluxo de caixa e planejamento de renda real com títulos IPCA+ e RendA+.</p>
-          </div>
-
-          <div class="cards">
-            <div class="card">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#1F4E79" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 9l-5 5-4-4-3 3"/></svg>
-              <h3>Histórico de Preços</h3>
-              <p>Visualize séries históricas de PU e taxas reais por título e vencimento.</p>
+                <div class="hint">
+                    👉 Use o menu lateral à esquerda para acessar cada ferramenta.
+                </div>
             </div>
-
-            <div class="card">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#1F4E79" stroke-width="2"><rect x="3" y="4" width="18" height="14"/><path d="M8 20h8"/></svg>
-              <h3>Simulador de Fluxo (RendA+)</h3>
-              <p>Simule fluxos mensais de renda, juros, amortização e imposto.</p>
-            </div>
-
-            <div class="card">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#1F4E79" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M5.5 21a6.5 6.5 0 0113 0"/></svg>
-              <h3>Planejador de Aposentadoria</h3>
-              <p>Calcule a alocação ótima em RendA+ para garantir renda real estável.</p>
-            </div>
-
-            <div class="card">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#1F4E79" stroke-width="2"><path d="M12 1v22"/><path d="M5 6h14"/><path d="M5 18h14"/></svg>
-              <h3>Precificador</h3>
-              <p>Compare preços teóricos vs. Tesouro Direto para IPCA+ e RendA+.</p>
-            </div>
-          </div>
-
-          <div class="hint">
-            👉 Use o menu lateral à esquerda para acessar cada ferramenta.
-          </div>
-        </div>
-        """, unsafe_allow_html=True)
+            """,
+            height=620,
+        )
 
 
 
@@ -763,4 +772,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
