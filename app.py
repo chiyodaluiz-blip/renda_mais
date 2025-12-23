@@ -151,7 +151,7 @@ import streamlit.components.v1 as components
 
 class HomePage(BasePage):
     def __init__(self, pages_meta: list[tuple[str, str]]):
-        super().__init__(title="HOME")
+        super().__init__(title="HOME", icon="")
         self.pages_meta = pages_meta
 
 
@@ -210,7 +210,7 @@ class HomePage(BasePage):
 
 class HistoricoPage(BasePage):
     def __init__(self):
-        super().__init__(title="Histórico de Preços")
+        super().__init__(title="Histórico de Preços", icon="")
 
     def render(self) -> None:
         components.html(
@@ -357,7 +357,7 @@ class HistoricoPage(BasePage):
 
 class SimuladorPage(BasePage):
     def __init__(self, simulator: RendaMaisSimulator):
-        super().__init__(title="Simulador de Fluxo (RendA+)")
+        super().__init__(title="Simulador de Fluxo (RendA+)", icon="")
         self.simulator = simulator
 
     def render(self) -> None:
@@ -488,7 +488,7 @@ class SimuladorPage(BasePage):
 
 class PlanejadorPage(BasePage):
     def __init__(self, planner: AposentadoriaPlanner):
-        super().__init__(title="Planejador de Aposentadoria")
+        super().__init__(title="Planejador de Aposentadoria", icon="")
         self.planner = planner
 
     def render(self) -> None:
@@ -611,7 +611,7 @@ class PlanejadorPage(BasePage):
 
 class PrecificadorPage(BasePage):
     def __init__(self, pricer: IPCAIndexedPricer, matcher: TesouroPriceMatcher):
-        super().__init__(title="Precificador (IPCA+ / RendA+)")
+        super().__init__(title="Precificador (IPCA+ / RendA+)", icon="")
         self.pricer = pricer
         self.matcher = matcher
 
@@ -749,4 +749,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
