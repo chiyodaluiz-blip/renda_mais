@@ -627,95 +627,64 @@ class PlanejadorPage(BasePage):
             # Linha do tempo visual
             # -----------------------------
             ano_atual = hoje.year
-            ano_aposentadoria = ano_atual + (idade_aposentadoria - idade_atual)
+            data_aposentadoria = date(
+                hoje.year + (idade_aposentadoria - idade_atual),
+                hoje.month,
+                hoje.day,
+            )
+
+            eventos_timeline = [
+                {
+                    "label": "Hoje",
+                    "data": hoje,
+                    "idade": idade_atual,
+                    "ano": hoje.year,
+                },
+                {
+                    "label": "Início da renda",
+                    "data": metrics["data_inicio"],
+                    "idade": metrics["idade_inicio_real"],
+                    "ano": metrics["ano_inicio_pagamento"],
+                },
+                {
+                    "label": "Aposentadoria",
+                    "data": data_aposentadoria,
+                    "idade": idade_aposentadoria,
+                    "ano": data_aposentadoria.year,
+                },
+                {
+                    "label": "Fim da renda",
+                    "data": metrics["data_fim"],
+                    "idade": metrics["idade_fim_real"],
+                    "ano": metrics["ano_fim_pagamento"],
+                },
+            ]
+
+            eventos_timeline = sorted(eventos_timeline, key=lambda e: e["data"])
+
+            timeline_html = """
+            <div class="timeline">
+            """
+            for e in eventos_timeline:
+                timeline_html += f"""
+                <div class="milestone">
+                    <div class="dot"></div>
+                    <div class="value">{e['idade']} anos</div>
+                    <div class="label">{e['label']} ({e['ano']})</div>
+                </div>
+                """
+            timeline_html += "</div>"
 
             components.html(
                 f"""
-                <style>
-                .timeline-wrapper {{
-                    margin: 28px 0 36px 0;
-                }}
-                .timeline {{
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                    position: relative;
-                    margin-top: 18px;
-                }}
-                .timeline::before {{
-                    content: "";
-                    position: absolute;
-                    top: 50%;
-                    left: 0;
-                    right: 0;
-                    height: 2px;
-                    background: #CBD5E1;
-                    z-index: 0;
-                }}
-                .milestone {{
-                    position: relative;
-                    background: #F8FAFC;
-                    padding: 6px 8px;
-                    text-align: center;
-                    z-index: 1;
-                    min-width: 90px;
-                }}
-                .dot {{
-                    width: 14px;
-                    height: 14px;
-                    background: #1F4E79;
-                    border-radius: 50%;
-                    margin: 0 auto 6px auto;
-                }}
-                .label {{
-                    font-size: 12px;
-                    color: #475569;
-                }}
-                .value {{
-                    font-size: 13px;
-                    font-weight: 600;
-                    color: #0B1F3B;
-                }}
-                .title {{
-                    font-size: 14px;
-                    font-weight: 600;
-                    color: #0B1F3B;
-                    margin-bottom: 6px;
-                }}
-                </style>
-
                 <div class="timeline-wrapper">
                     <div class="title">Linha do tempo da aposentadoria</div>
-
-                    <div class="timeline">
-                        <div class="milestone">
-                            <div class="dot"></div>
-                            <div class="value">{idade_atual} anos</div>
-                            <div class="label">Hoje ({ano_atual})</div>
-                        </div>
-
-                        <div class="milestone">
-                            <div class="dot"></div>
-                            <div class="value">{idade_aposentadoria} anos</div>
-                            <div class="label">Aposentadoria ({ano_aposentadoria})</div>
-                        </div>
-
-                        <div class="milestone">
-                            <div class="dot"></div>
-                            <div class="value">{metrics['idade_inicio_real']} anos</div>
-                            <div class="label">Início da renda ({metrics['ano_inicio_pagamento']})</div>
-                        </div>
-
-                        <div class="milestone">
-                            <div class="dot"></div>
-                            <div class="value">{metrics['idade_fim_real']} anos</div>
-                            <div class="label">Fim da renda ({metrics['ano_fim_pagamento']})</div>
-                        </div>
-                    </div>
+                    {timeline_html}
                 </div>
                 """,
                 height=170,
             )
+
 
             components.html(
                 f"""
