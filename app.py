@@ -736,6 +736,7 @@ class PlanejadorPage(BasePage):
                 <h3>Resumo da Aposentadoria</h3>
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
                     {kpi_card("Início da renda", f"{metrics['idade_inicio_real']} anos", f"Ano {metrics['ano_inicio_pagamento']}")}
+                    {kpi_card("Início da aposentadoria", f"{idade_aposentadoria} anos", f"Ano {metrics["data_aposentadoria"].year}")}
                     {kpi_card("Fim da renda", f"{metrics['idade_fim_real']} anos", f"Ano {metrics['ano_fim_pagamento']}")}
                     {kpi_card("Duração total", f"{metrics['duracao_anos']} anos", f"{metrics['duracao_meses']} meses")}
                 </div>
