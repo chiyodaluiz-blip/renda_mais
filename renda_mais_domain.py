@@ -436,4 +436,5 @@ def compute_retirement_metrics(
         # Datas
         "data_inicio": data_inicio,
         "data_fim": data_fim,
+        "data_aposentadoria": data_aposentadoria,
     }
