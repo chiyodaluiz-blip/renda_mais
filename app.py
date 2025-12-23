@@ -677,12 +677,71 @@ class PlanejadorPage(BasePage):
 
             components.html(
                 f"""
+                <style>
+                    .timeline-wrapper {{
+                        margin-top: 12px;
+                    }}
+
+                    .timeline-title {{
+                        font-weight: 600;
+                        margin-bottom: 12px;
+                    }}
+
+                    .timeline {{
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        position: relative;
+                        margin-top: 10px;
+                    }}
+
+                    .timeline::before {{
+                        content: "";
+                        position: absolute;
+                        top: 22px;
+                        left: 0;
+                        right: 0;
+                        height: 2px;
+                        background: #CBD5E1;
+                        z-index: 0;
+                    }}
+
+                    .milestone {{
+                        position: relative;
+                        text-align: center;
+                        z-index: 1;
+                        background: #F8FAFC;
+                        padding: 10px 14px;
+                        border-radius: 10px;
+                        min-width: 120px;
+                        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+                    }}
+
+                    .dot {{
+                        width: 12px;
+                        height: 12px;
+                        background: #1F4E79;
+                        border-radius: 50%;
+                        margin: 0 auto 6px auto;
+                    }}
+
+                    .value {{
+                        font-weight: 700;
+                        font-size: 14px;
+                    }}
+
+                    .label {{
+                        font-size: 12px;
+                        color: #475569;
+                    }}
+                </style>
+
                 <div class="timeline-wrapper">
-                    <div class="title">Linha do tempo da aposentadoria</div>
+                    <div class="timeline-title">Linha do tempo da aposentadoria</div>
                     {timeline_html}
                 </div>
                 """,
-                height=170,
+                height=220,
             )
 
 
