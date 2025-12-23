@@ -756,7 +756,7 @@ class PlanejadorPage(BasePage):
                 </div>
 
                 """,
-                height=220,
+                height=360,
             )
             
             components.html(
@@ -941,5 +941,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
