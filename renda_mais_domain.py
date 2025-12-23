@@ -366,6 +366,8 @@ def compute_retirement_metrics(
         "idade_fim_real": int(floor(idade_fim_real)),
         "ano_inicio_pagamento": ano_inicio_pagamento,
         "ano_fim_pagamento": ano_fim_pagamento,
+        "duracao_anos": duracao_anos,
+        "duracao_meses": duracao_meses,
 
         # Renda
         "renda_media": renda_media,
@@ -388,3 +390,4 @@ def compute_retirement_metrics(
         "data_inicio": data_inicio,
         "data_fim": data_fim,
     }
+
