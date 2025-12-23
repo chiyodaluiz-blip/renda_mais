@@ -361,6 +361,17 @@ def compute_retirement_metrics(
     df_renda: DataFrame com colunas ['data', 'renda_real_liquida']
     """
 
+    data_aposentadoria = date(
+        hoje.year + (idade_aposentadoria - idade_atual),
+        hoje.month,
+        hoje.day,
+    )
+
+    df_pos_apos = df_renda[
+        df_renda["data"] >= data_aposentadoria
+    ].copy()
+
+
     renda = df_renda["renda_real_liquida"].values
 
     renda_media = float(np.mean(renda))
@@ -383,6 +394,7 @@ def compute_retirement_metrics(
 
     data_inicio = pd.to_datetime(df_renda["data"].min()).date()
     data_fim = pd.to_datetime(df_renda["data"].max()).date()
+
 
 
     # idade real no primeiro e último pagamento
@@ -425,4 +437,3 @@ def compute_retirement_metrics(
         "data_inicio": data_inicio,
         "data_fim": data_fim,
     }
-
