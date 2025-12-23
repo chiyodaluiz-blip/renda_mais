@@ -744,15 +744,13 @@ class PlanejadorPage(BasePage):
 
             components.html(
                 f"""
-                <h3>Renda Real Mensal</h3>
-                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
+                <h3>Renda Real Mensal (considerando apenas o período após aposentadoria)</h3>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:20px;">
                     {kpi_card("Renda média", f"R$ {metrics['renda_media']:,.0f}")}
                     {kpi_card("Renda mínima", f"R$ {metrics['renda_min']:,.0f}")}
                     {kpi_card("Renda máxima", f"R$ {metrics['renda_max']:,.0f}")}
-                    {kpi_card("Volatilidade", f"±{metrics['volatilidade_pct']*100:.1f}%")}
                 </div>
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
-                    {kpi_card("Margem de segurança", f"{metrics['margem_seguranca']*100:.1f}%")}
                     {kpi_card("Meses abaixo do alvo", f"{metrics['meses_abaixo_objetivo']}")}
                     {kpi_card("Pior mês", f"R$ {metrics['pior_gap_abs']:,.0f}", f"{metrics['pior_gap_pct']*100:.1f}% vs alvo")}
                 </div>
@@ -795,10 +793,6 @@ class PlanejadorPage(BasePage):
             y="renda_real_liquida",title="Renda mensal real líquida durante a aposentadoria", labels={"data": "Data", "renda_real_liquida": "Renda (R$)"}, template="plotly_white", color_discrete_sequence=CUSTOM_COLORS)
         st.plotly_chart(fig, use_container_width=True)
 
-        #renda_media = df_fluxo_pos_apos["renda_real_liquida"].mean()
-        #renda_min = df_fluxo_pos_apos["renda_real_liquida"].min()
-        #renda_max = df_fluxo_pos_apos["renda_real_liquida"].max()
-        #volatilidade = df_fluxo_pos_apos["renda_real_liquida"].std() / renda_media
         st.markdown(f"**Renda média:** R$ {metrics['renda_media']:,.2f} – **mín:** R$ {metrics['renda_min']:,.2f} – **máx:** R$ {metrics['renda_max']:,.2f}")
 
         # métricas de qualidade do ajuste
