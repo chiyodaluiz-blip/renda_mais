@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 from typing import Tuple, Dict
+from math import floor
 
 import numpy as np
 import pandas as pd
@@ -348,15 +349,23 @@ def compute_retirement_metrics(
     data_inicio = df_renda["data"].min().date()
     data_fim = df_renda["data"].max().date()
 
-    idade_inicio_real = idade_aposentadoria
-    idade_fim_real = idade_fim_recebimento
+
+    # idade real no primeiro e último pagamento
+    anos_ate_inicio = (data_inicio - hoje).days / 365.25
+    anos_ate_fim = (data_fim - hoje).days / 365.25
+
+    idade_inicio_real = idade_atual + anos_ate_inicio
+    idade_fim_real = idade_atual + anos_ate_fim
+
+    ano_inicio_pagamento = data_inicio.year
+    ano_fim_pagamento = data_fim.year
 
     return {
         # Tempo
-        "idade_inicio": idade_inicio_real,
-        "idade_fim": idade_fim_real,
-        "duracao_anos": duracao_anos,
-        "duracao_meses": duracao_meses,
+        "idade_inicio_real": int(floor(idade_inicio_real)),
+        "idade_fim_real": int(floor(idade_fim_real)),
+        "ano_inicio_pagamento": ano_inicio_pagamento,
+        "ano_fim_pagamento": ano_fim_pagamento,
 
         # Renda
         "renda_media": renda_media,
