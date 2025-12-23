@@ -751,7 +751,7 @@ class PlanejadorPage(BasePage):
                     {kpi_card("Renda máxima", f"R$ {metrics['renda_max']:,.0f}")}
                 </div>
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:20px;">
-                    {kpi_card("Meses abaixo do alvo", f"{metrics['meses_abaixo_objetivo']}")}
+                    {kpi_card("Meses abaixo do alvo", f"{metrics['meses_abaixo_objetivo']}", f"{metrics['meses_abaixo_objetivo']/metrics['duracao_meses']:.1f}% do total")}
                     {kpi_card("Pior mês", f"R$ {metrics['pior_gap_abs']:,.0f}", f"{metrics['pior_gap_pct']*100:.1f}% vs alvo")}
                 </div>
 
@@ -941,6 +941,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
