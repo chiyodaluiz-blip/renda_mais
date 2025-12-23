@@ -735,7 +735,7 @@ class TesouroApp:
     def run(self) -> None:
         pages_def = []
         for page, slug in zip(self.pages, self.page_slugs):
-            pages_def.append(st.Page(page.render, title=page.title, icon=page.icon, url_path=slug))
+            pages_def.append(st.Page(page.render, title=page.title, url_path=slug))
         # navigation with default position = sidebar (lateral)
         nav = st.navigation(pages_def)
         nav.run()
@@ -748,6 +748,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
