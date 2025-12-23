@@ -786,7 +786,11 @@ class PlanejadorPage(BasePage):
         st.subheader("Renda mensal REAL líquida simulada")
 
         fig = px.line(
-            df_plot_fluxo,
+            df_fluxo_real.rename(
+            columns={
+                "data_pagamento": "data",
+                "parcela_nominal_liquida": "renda_real_liquida",
+            }),
             x="data",
             y="renda_real_liquida",title="Renda mensal real líquida durante a aposentadoria", labels={"data": "Data", "renda_real_liquida": "Renda (R$)"}, template="plotly_white", color_discrete_sequence=CUSTOM_COLORS)
         st.plotly_chart(fig, use_container_width=True)
