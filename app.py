@@ -144,8 +144,9 @@ class BasePage:
 import streamlit.components.v1 as components
 
 class HomePage(BasePage):
-    def __init__(self):
+    def __init__(self, pages_meta: list[tuple[str, str]]):
         super().__init__(title="HOME", icon="🏠")
+        self.pages_meta = pages_meta
 
     def render(self) -> None:
         st.markdown("""
@@ -762,3 +763,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
