@@ -372,7 +372,7 @@ def compute_retirement_metrics(
     ].copy()
 
 
-    renda = df_renda["renda_real_liquida"].values
+    renda = df_pos_apos["renda_real_liquida"].values
 
     renda_media = float(np.mean(renda))
     renda_min = float(np.min(renda))
