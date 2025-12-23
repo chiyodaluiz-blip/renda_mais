@@ -629,7 +629,7 @@ class PlanejadorPage(BasePage):
             # Linha do tempo visual
             # -----------------------------
             ano_atual = hoje.year
-
+            
             eventos_timeline = [
                 {
                     "label": "Hoje",
@@ -645,9 +645,9 @@ class PlanejadorPage(BasePage):
                 },
                 {
                     "label": "Aposentadoria",
-                    "data": data_aposentadoria,
+                    "data": metrics["data_aposentadoria"],
                     "idade": idade_aposentadoria,
-                    "ano": data_aposentadoria.year,
+                    "ano": metrics["data_aposentadoria"].year,
                 },
                 {
                     "label": "Fim da renda",
