@@ -602,6 +602,15 @@ class PlanejadorPage(BasePage):
                 hoje=hoje,
             )
 
+
+            # -----------------------------
+            # Table: Alocação sugerida
+            # -----------------------------
+            st.header("Resultado da otimização")
+            st.subheader("Sugestão de alocação para fluxo mensal (reais de hoje)")
+            st.dataframe(df_aloc.style.format({"taxa_real_anual": "{:.2%}".format, "investimento_sugerido": "R$ {:,.2f}".format}))
+
+
             # -----------------------------
             # Card: Resumo da Aposentadoria
             # -----------------------------
@@ -784,13 +793,6 @@ class PlanejadorPage(BasePage):
             )
 
             # -----------------------------
-            # Table: Alocação sugerida
-            # -----------------------------
-            st.subheader("Sugestão de alocação para fluxo mensal (reais de hoje)")
-            st.dataframe(df_aloc.style.format({"taxa_real_anual": "{:.2%}".format, "investimento_sugerido": "R$ {:,.2f}".format}))
-
-
-            # -----------------------------
             # Table: Grafico do fluxo
             # -----------------------------
             st.write(f"**Investimento total sugerido: R$ {investimento_total:,.2f}**")
@@ -804,6 +806,15 @@ class PlanejadorPage(BasePage):
                 }),
                 x="data",
                 y="renda_real_liquida",title="Renda mensal real líquida durante a aposentadoria", labels={"data": "Data", "renda_real_liquida": "Renda (R$)"}, template="plotly_white", color_discrete_sequence=CUSTOM_COLORS)
+            fig.add_hline(
+                y=renda_desejada,
+                line_dash="dash",
+                line_color="#EF4444",  # vermelho corporativo
+                line_width=2,
+                annotation_text="Renda desejada",
+                annotation_position="top left",
+            )
+
             st.plotly_chart(fig, use_container_width=True)
 
             st.markdown(f"**Renda média:** R$ {metrics['renda_media']:,.2f} – **mín:** R$ {metrics['renda_min']:,.2f} – **máx:** R$ {metrics['renda_max']:,.2f}")
