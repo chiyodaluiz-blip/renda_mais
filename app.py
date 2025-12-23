@@ -576,7 +576,7 @@ class PlanejadorPage(BasePage):
         taxas_sel = (df_usar["Taxa real (%)"] / 100.0).astype(float).tolist()
 
         try:
-            df_aloc, df_renda = self.planner.montar_alocacao(
+            df_aloc, df_renda_otimizacao, df_fluxo_real = self.planner.montar_alocacao(
                 idade_atual=int(idade_atual),
                 idade_aposentadoria=int(idade_aposentadoria),
                 idade_fim_recebimento=int(idade_fim_recebimento),
@@ -587,7 +587,12 @@ class PlanejadorPage(BasePage):
             )
 
             metrics = compute_retirement_metrics(
-                df_renda=df_renda,
+                df_renda=df_fluxo_real.rename(
+                    columns={
+                        "data_pagamento": "data",
+                        "parcela_nominal_liquida": "renda_real_liquida",
+                    }
+                ),
                 renda_objetivo=renda_desejada,
                 idade_atual=int(idade_atual),
                 idade_aposentadoria=int(idade_aposentadoria),
@@ -754,17 +759,27 @@ class PlanejadorPage(BasePage):
         st.write(f"**Investimento total sugerido: R$ {investimento_total:,.2f}**")
 
         st.subheader("Renda mensal REAL líquida simulada")
-        fig = px.line(df_renda, x="data", y="renda_real_liquida", title="Renda mensal real líquida durante a aposentadoria", labels={"data": "Data", "renda_real_liquida": "Renda (R$)"}, template="plotly_white", color_discrete_sequence=CUSTOM_COLORS)
+        df_plot_fluxo = df_fluxo_real.rename(
+            columns={
+                "data_pagamento": "data",
+                "parcela_nominal_liquida": "renda_real_liquida",
+            }
+        )
+
+        fig = px.line(
+            df_plot_fluxo,
+            x="data",
+            y="renda_real_liquida",title="Renda mensal real líquida durante a aposentadoria", labels={"data": "Data", "renda_real_liquida": "Renda (R$)"}, template="plotly_white", color_discrete_sequence=CUSTOM_COLORS)
         st.plotly_chart(fig, use_container_width=True)
 
-        renda_media = df_renda["renda_real_liquida"].mean()
-        renda_min = df_renda["renda_real_liquida"].min()
-        renda_max = df_renda["renda_real_liquida"].max()
+        renda_media = df_plot_fluxo["renda_real_liquida"].mean()
+        renda_min = df_plot_fluxo["renda_real_liquida"].min()
+        renda_max = df_plot_fluxo["renda_real_liquida"].max()
         st.markdown(f"**Renda média:** R$ {renda_media:,.2f} – **mín:** R$ {renda_min:,.2f} – **máx:** R$ {renda_max:,.2f}")
 
         # métricas de qualidade do ajuste
         desired = float(renda_desejada)
-        rmse = np.sqrt(((df_renda["renda_real_liquida"] - desired) ** 2).mean())
+        rmse = np.sqrt(((df_renda_otimizacao["renda_real_liquida"] - desired) ** 2).mean())
         st.write(f"RMSE do ajuste: R$ {rmse:,.2f}")
 
 
