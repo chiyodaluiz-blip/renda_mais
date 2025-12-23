@@ -588,25 +588,13 @@ class PlanejadorPage(BasePage):
                 taxas_reais_aa=taxas_sel,
             )
 
-            data_aposentadoria = date(
-                hoje.year + (idade_aposentadoria - idade_atual),
-                hoje.month,
-                hoje.day,
-            )
-            
-            df_plot_fluxo = df_fluxo_real.rename(
-                columns={
-                    "data_pagamento": "data",
-                    "parcela_nominal_liquida": "renda_real_liquida",
-                }
-            )
-
-            df_fluxo_pos_apos = df_plot_fluxo[
-                df_plot_fluxo["data"] >= pd.to_datetime(data_aposentadoria)
-            ].copy()
-            
             metrics = compute_retirement_metrics(
-                df_renda=df_fluxo_pos_apos,
+                df_renda=df_fluxo_real.rename(
+                    columns={
+                        "data_pagamento": "data",
+                        "parcela_nominal_liquida": "renda_real_liquida",
+                    }
+                ),
                 renda_objetivo=renda_desejada,
                 idade_atual=int(idade_atual),
                 idade_aposentadoria=int(idade_aposentadoria),
