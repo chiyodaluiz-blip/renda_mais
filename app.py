@@ -144,128 +144,113 @@ class BasePage:
 import streamlit.components.v1 as components
 
 class HomePage(BasePage):
-    def __init__(self, pages_meta: list[tuple[str, str]]):
+    def __init__(self):
         super().__init__(title="HOME", icon="🏠")
-        self.pages_meta = pages_meta
 
     def render(self) -> None:
-        st.header(f"{self.icon} {self.title}")
-        st.write("Bem-vindo! Clique em um card para ir à ferramenta desejada.")
-
-        # Descrições e ícones (ajuste se quiser)
-        desc_map = {
-            "historico": "Visualizar histórico de preços e taxas de todos os títulos.",
-            "simulador": "Simular fluxo de pagamento das operações de RendA+.",
-            "planejador": "Calcular alocação para atingir renda desejada na aposentadoria.",
-            "precificador": "Precificar títulos IPCA+ e RendA+ (modelo vs. oficial).",
-        }
-        icon_map = {
-            "historico": "📈",
-            "simulador": "📊",
-            "planejador": "🧓",
-            "precificador": "💰",
-        }
-
-        # Monta HTML/CSS/JS completo para renderizar os cards e controlar navegação
-        cards_html = """
+        st.markdown("""
         <style>
-        .cards { display:flex; flex-wrap:wrap; gap:18px; margin-top:18px; }
-        .card {
-            display:block; width:340px; min-height:120px; padding:18px; border-radius:12px;
-            background: linear-gradient(180deg, #ffffff, #f7f9fc);
-            box-shadow: 0 6px 18px rgba(11,31,59,0.06); border: 1px solid rgba(11,31,59,0.04);
-            text-decoration:none; color:#0B1F3B; transition: transform .12s ease, box-shadow .12s ease;
-            cursor:pointer; overflow:hidden;
+        .landing {
+            padding-top: 10px;
         }
-        .card:hover { transform: translateY(-6px); box-shadow: 0 12px 28px rgba(11,31,59,0.12); }
-        .card .row { display:flex; align-items:center; gap:12px; margin-bottom:8px; }
-        .card .icon { font-size:26px; }
-        .card .title { font-size:18px; font-weight:700; }
-        .card .desc { font-size:13px; color:#475569; margin-bottom:12px; }
-        .card .cta { font-size:13px; color:#1F4E79; font-weight:600; }
-        @media(max-width:860px){ .card{ width:100%; } }
+        .hero {
+            max-width: 1100px;
+            margin-bottom: 30px;
+        }
+        .hero h1 {
+            font-size: 42px;
+            font-weight: 700;
+            color: #0B1F3B;
+        }
+        .hero p {
+            font-size: 18px;
+            color: #475569;
+            margin-top: 8px;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 22px;
+            max-width: 1100px;
+        }
+
+        .card {
+            background: linear-gradient(180deg, #FFFFFF, #F6F8FB);
+            border-radius: 16px;
+            padding: 22px;
+            border: 1px solid rgba(11,31,59,0.08);
+            box-shadow: 0 10px 26px rgba(11,31,59,0.08);
+            transition: transform .18s ease, box-shadow .18s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 18px 40px rgba(11,31,59,0.14);
+        }
+
+        .card svg {
+            width: 42px;
+            height: 42px;
+            margin-bottom: 14px;
+        }
+
+        .card h3 {
+            font-size: 18px;
+            margin-bottom: 6px;
+            color: #0B1F3B;
+        }
+
+        .card p {
+            font-size: 14px;
+            color: #475569;
+        }
+
+        .hint {
+            margin-top: 26px;
+            font-size: 14px;
+            color: #64748B;
+        }
         </style>
 
-        <div class="cards">
-        """
+        <div class="landing">
+          <div class="hero">
+            <h1>Planejamento Financeiro com Tesouro Direto</h1>
+            <p>Ferramentas profissionais para análise de preços, fluxo de caixa e planejamento de renda real com títulos IPCA+ e RendA+.</p>
+          </div>
 
-        # adicionar um card por página
-        for slug, title in self.pages_meta:
-            icon = icon_map.get(slug, "🔗")
-            desc = desc_map.get(slug, "")
-            # cada card tem data-slug para o JS capturar
-            cards_html += f"""
-            <div class="card" data-slug="{slug}">
-                <div class="row"><div class="icon">{icon}</div><div class="title">{title}</div></div>
-                <div class="desc">{desc}</div>
-                <div class="cta">Abrir →</div>
+          <div class="cards">
+            <div class="card">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#1F4E79" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 9l-5 5-4-4-3 3"/></svg>
+              <h3>Histórico de Preços</h3>
+              <p>Visualize séries históricas de PU e taxas reais por título e vencimento.</p>
             </div>
-            """
 
-        cards_html += "</div>"
+            <div class="card">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#1F4E79" stroke-width="2"><rect x="3" y="4" width="18" height="14"/><path d="M8 20h8"/></svg>
+              <h3>Simulador de Fluxo (RendA+)</h3>
+              <p>Simule fluxos mensais de renda, juros, amortização e imposto.</p>
+            </div>
 
-        # Script JS que:
-        # 1) intercepta clique no card,
-        # 2) atualiza a query string ?page=slug usando history.pushState + location.search,
-        # 3) dispara um evento para forçar o Streamlit a reagir (algumas versões respondem melhor a change event).
-        # Usamos location.search para que o st.navigation reconheça a página.
-        cards_html += """
-        <script>
-        (function() {
-            function setPageParam(slug) {
-                try {
-                    const params = new URLSearchParams(window.location.search);
-                    params.set('page', slug);
-                    const newUrl = window.location.pathname + '?' + params.toString();
-                    // Usar pushState para não recarregar imediatamente; depois forçamos reload
-                    window.history.pushState({}, '', newUrl);
-                    // Alguns ambientes Streamlit detectam o change no search; se necessário, recarregamos:
-                    // A preferência é evitar reload completo, tentar apenas disparar evento.
-                    window.dispatchEvent(new Event('popstate')); // sinalizar mudança de histórico
-                    // fallback: se nada reagir em 120ms, recarrega a pagina (mantendo mesma aba)
-                    setTimeout(() => {
-                        // se a query string estiver correta, pedir reload para Streamlit aplicar
-                        if (window.location.search.indexOf('page=' + slug) !== -1) {
-                            try { window.location.reload(); } catch(e) { /* ignore */ }
-                        }
-                    }, 120);
-                } catch (e) {
-                    try { window.location.search = 'page=' + slug; } catch (err) { /* ignore */ }
-                }
-            }
-            // Attach click listeners
-            const cards = document.querySelectorAll('.card[data-slug]');
-            cards.forEach(card => {
-                card.addEventListener('click', () => {
-                    const slug = card.getAttribute('data-slug');
-                    setPageParam(slug);
-                });
-            });
-        })();
-        </script>
-        """
+            <div class="card">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#1F4E79" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M5.5 21a6.5 6.5 0 0113 0"/></svg>
+              <h3>Planejador de Aposentadoria</h3>
+              <p>Calcule a alocação ótima em RendA+ para garantir renda real estável.</p>
+            </div>
 
-        # Renderiza o bloco via componente (unsafe HTML + JS)
-        components.html(cards_html, height=420, scrolling=True)
+            <div class="card">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#1F4E79" stroke-width="2"><path d="M12 1v22"/><path d="M5 6h14"/><path d="M5 18h14"/></svg>
+              <h3>Precificador</h3>
+              <p>Compare preços teóricos vs. Tesouro Direto para IPCA+ e RendA+.</p>
+            </div>
+          </div>
 
-        st.markdown("---")
-        st.write("Se preferir, use a navegação lateral para acessar qualquer ferramenta.")
-        # fallback nativo (botões Streamlit) — útil se JS for bloqueado
-        cols = st.columns(len(self.pages_meta))
-        for i, (slug, title) in enumerate(self.pages_meta):
-            with cols[i]:
-                if st.button(f"Abrir {title}", key=f"home_btn_{slug}"):
-                    # tenta setar query params via Streamlit antes de tentar reload
-                    try:
-                        st.experimental_set_query_params(page=slug)
-                        if hasattr(st, "experimental_rerun"):
-                            st.experimental_rerun()
-                        elif hasattr(st, "rerun"):
-                            st.rerun()
-                        else:
-                            st.info("Parâmetro de URL definido; por favor use a barra lateral para trocar de página.")
-                    except Exception:
-                        st.info("Não foi possível navegar programaticamente — use a barra lateral ou clique no card.")
+          <div class="hint">
+            👉 Use o menu lateral à esquerda para acessar cada ferramenta.
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
+
 
 
 class HistoricoPage(BasePage):
@@ -424,8 +409,8 @@ class SimuladorPage(BasePage):
                 "IPCA médio esperado (a.a., %) – aplicado a todas as operações",
                 min_value=-5.0,
                 max_value=20.0,
-                value=4.0,
-                step=0.25,
+                value=0.0,
+                step=0.50,
             )
 
             n_operacoes = int(st.number_input("Número de operações (compras diferentes)", min_value=1, max_value=20, value=2, step=1))
@@ -437,7 +422,7 @@ class SimuladorPage(BasePage):
                     "Operação": i + 1,
                     "Data compra": pd.to_datetime(data_padrao),
                     "Ano conversão": vencimentos_validos[min(i, len(vencimentos_validos) - 1)],
-                    "Taxa real (%)": 6.0,
+                    "Taxa real (%)": 7.0,
                     "Valor investido (R$)": 10000.0 if i == 0 else 0.0,
                 })
             df_ops = pd.DataFrame(dados_ops)
@@ -547,31 +532,31 @@ class PlanejadorPage(BasePage):
                     "Idade em que deseja se aposentar",
                     min_value=idade_atual + 1,
                     max_value=100,
-                    value=65,
+                    value=45,
                     step=1,
                 )
-            with c2:
                 idade_fim_recebimento = st.number_input(
                     "Até que idade espera receber renda?",
                     min_value=idade_aposentadoria + 1,
                     max_value=120,
-                    value=85,
+                    value=90,
                     step=1,
                     help="Horizonte para garantir a renda média solicitada (anos)."
-                )
+                )            
+            with c2:
                 renda_desejada = st.number_input(
                     "Renda mensal REAL líquida desejada (R$)",
                     min_value=0.0,
-                    value=5000.0,
-                    step=500.0,
+                    value=10000.0,
+                    step=1000.0,
                     format="%.2f",
                 )
                 st.number_input(
                     "IPCA esperado (a.a., %, apenas informativo)",
                     min_value=-5.0,
                     max_value=20.0,
-                    value=4.0,
-                    step=0.25,
+                    value=0.0,
+                    step=0.50,
                 )
 
             st.subheader("Parâmetros dos títulos RendA+")
@@ -582,7 +567,7 @@ class PlanejadorPage(BasePage):
                     {
                         "Ano conversão": ano,
                         "Usar": ano >= hoje.year + 5,
-                        "Taxa real (%)": 6.0,
+                        "Taxa real (%)": 7.0,
                     }
                 )
             df_venc = pd.DataFrame(dados_venc)
