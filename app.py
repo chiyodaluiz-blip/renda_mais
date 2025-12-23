@@ -11,13 +11,15 @@ import streamlit as st
 
 # módulos do projeto (devem existir)
 from tesouro_data import TesouroDiretoRepository, VnaRepository
-from renda_mais_domain import RendaMaisSimulator, RendaMaisOperation, AposentadoriaPlanner
+from renda_mais_domain import RendaMaisSimulator, RendaMaisOperation, AposentadoriaPlanner, compute_retirement_metrics
 from pricing_domain import IPCAIndexedPricer, TesouroPriceMatcher, BondSpec
 
 # desing UI themes/icons
 from ui.theme import global_css
 from ui.icons import icon
+from ui.kpi import kpi_card
 import streamlit.components.v1 as components
+
 st.markdown(global_css(), unsafe_allow_html=True)
 
 # -----------------------
@@ -141,6 +143,7 @@ def clear_all_cache() -> None:
 @dataclass
 class BasePage:
     title: str
+    icon: str
 
     def render(self) -> None:
         raise NotImplementedError
@@ -150,7 +153,7 @@ import streamlit.components.v1 as components
 
 class HomePage(BasePage):
     def __init__(self, pages_meta: list[tuple[str, str]]):
-        super().__init__(title="HOME")
+        super().__init__(title="HOME", icon="")
         self.pages_meta = pages_meta
 
 
@@ -189,7 +192,7 @@ class HomePage(BasePage):
             <div class="container">
               <h1>Planejamento Financeiro com Tesouro Direto</h1>
               <p style="font-size:18px;color:#475569;margin-bottom:32px;">
-                Ferramentas profissionais para análise de preços, fluxo de caixa e planejamento de renda real.
+                Ferramentas para análise de preços, fluxo de caixa e planejamento de renda real.
               </p>
 
               <div class="cards">
@@ -209,7 +212,7 @@ class HomePage(BasePage):
 
 class HistoricoPage(BasePage):
     def __init__(self):
-        super().__init__(title="Histórico de Preços")
+        super().__init__(title="Histórico de Preços", icon="")
 
     def render(self) -> None:
         components.html(
@@ -356,7 +359,7 @@ class HistoricoPage(BasePage):
 
 class SimuladorPage(BasePage):
     def __init__(self, simulator: RendaMaisSimulator):
-        super().__init__(title="Simulador de Fluxo (RendA+)")
+        super().__init__(title="Simulador de Fluxo (RendA+)", icon="")
         self.simulator = simulator
 
     def render(self) -> None:
@@ -487,7 +490,7 @@ class SimuladorPage(BasePage):
 
 class PlanejadorPage(BasePage):
     def __init__(self, planner: AposentadoriaPlanner):
-        super().__init__(title="Planejador de Aposentadoria")
+        super().__init__(title="Planejador de Aposentadoria", icon="")
         self.planner = planner
 
     def render(self) -> None:
@@ -583,6 +586,65 @@ class PlanejadorPage(BasePage):
                 vencimentos=venc_sel,
                 taxas_reais_aa=taxas_sel,
             )
+
+            metrics = compute_retirement_metrics(
+                df_renda=df_renda,
+                renda_objetivo=renda_desejada,
+                idade_atual=int(idade_atual),
+                idade_aposentadoria=int(idade_aposentadoria),
+                idade_fim_recebimento=int(idade_fim_recebimento),
+                hoje=hoje,
+            )
+
+            components.html(
+                f"""
+                <h3>Resumo da Aposentadoria</h3>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
+                    {kpi_card("Início da renda", f"{metrics['idade_inicio']} anos")}
+                    {kpi_card("Fim da renda", f"{metrics['idade_fim']} anos")}
+                    {kpi_card("Duração", f"{metrics['duracao_anos']} anos", f"{metrics['duracao_meses']} meses")}
+                </div>
+                """,
+                height=180,
+            )
+
+            components.html(
+                f"""
+                <h3>Resumo da Aposentadoria</h3>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
+                    {kpi_card("Início da renda", f"{metrics['idade_inicio']} anos")}
+                    {kpi_card("Fim da renda", f"{metrics['idade_fim']} anos")}
+                    {kpi_card("Duração", f"{metrics['duracao_anos']} anos", f"{metrics['duracao_meses']} meses")}
+                </div>
+                """,
+                height=180,
+            )
+
+            components.html(
+                f"""
+                <h3>Segurança do Plano</h3>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
+                    {kpi_card("Margem de segurança", f"{metrics['margem_seguranca']*100:.1f}%")}
+                    {kpi_card("Meses abaixo do alvo", f"{metrics['meses_abaixo_objetivo']}")}
+                    {kpi_card("Pior mês", f"R$ {metrics['pior_gap_abs']:,.0f}", f"{metrics['pior_gap_pct']*100:.1f}% vs alvo")}
+                </div>
+                """,
+                height=220,
+            )
+            
+            components.html(
+                f"""
+                <h3>Segurança do Plano</h3>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
+                    {kpi_card("Margem de segurança", f"{metrics['margem_seguranca']*100:.1f}%")}
+                    {kpi_card("Meses abaixo do alvo", f"{metrics['meses_abaixo_objetivo']}")}
+                    {kpi_card("Pior mês", f"R$ {metrics['pior_gap_abs']:,.0f}", f"{metrics['pior_gap_pct']*100:.1f}% vs alvo")}
+                </div>
+                """,
+                height=220,
+            )
+
+
         except ValueError as e:
             st.error(str(e))
             return
@@ -610,7 +672,7 @@ class PlanejadorPage(BasePage):
 
 class PrecificadorPage(BasePage):
     def __init__(self, pricer: IPCAIndexedPricer, matcher: TesouroPriceMatcher):
-        super().__init__(title="Precificador (IPCA+ / RendA+)")
+        super().__init__(title="Precificador (IPCA+ / RendA+)", icon="")
         self.pricer = pricer
         self.matcher = matcher
 
@@ -735,7 +797,7 @@ class TesouroApp:
     def run(self) -> None:
         pages_def = []
         for page, slug in zip(self.pages, self.page_slugs):
-            pages_def.append(st.Page(page.render, title=page.title, url_path=slug))
+            pages_def.append(st.Page(page.render, title=page.title, icon=page.icon, url_path=slug))
         # navigation with default position = sidebar (lateral)
         nav = st.navigation(pages_def)
         nav.run()
@@ -748,7 +810,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
