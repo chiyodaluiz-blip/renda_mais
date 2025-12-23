@@ -297,6 +297,40 @@ class AposentadoriaPlanner:
         x = x * scale
         renda_resultante = renda_resultante * scale
 
+
+        # --------------------------------------------------
+        # NOVO: construir fluxo REAL completo (desde o 1º pagamento)
+        # --------------------------------------------------
+        fluxos_reais = []
+
+        for ano_conv, taxa_real, investimento in zip(vencimentos, taxas_reais_aa, x):
+            if investimento <= 0:
+                continue
+
+            op = RendaMaisOperation(
+                data_compra=hoje,
+                ano_conversao=ano_conv,
+                taxa_real_aa=taxa_real,
+                ipca_aa=0.0,
+                valor_investido=investimento,
+                nome_titulo=f"RendA+ {ano_conv}",
+            )
+
+            df_fluxo_op, _ = self.simulator.simulate_operation(op)
+            fluxos_reais.append(df_fluxo_op)
+
+        if fluxos_reais:
+            df_fluxo_real = (
+                pd.concat(fluxos_reais)
+                .groupby("data_pagamento", as_index=False)
+                .sum(numeric_only=True)
+                .sort_values("data_pagamento")
+            )
+        else:
+            df_fluxo_real = pd.DataFrame(
+                columns=["data_pagamento", "parcela_nominal_liquida"]
+            )
+
         # Build outputs
         df_aloc = pd.DataFrame({
             "ano_conversao": vencimentos,
@@ -304,12 +338,13 @@ class AposentadoriaPlanner:
             "investimento_sugerido": x,
         })
 
-        df_renda = pd.DataFrame({
+        df_renda_otimizacao = pd.DataFrame({
             "data": month_index,
             "renda_real_liquida": renda_resultante
         })
 
-        return df_aloc, df_renda
+
+        return df_aloc, df_renda_otimizacao, df_fluxo_real
 
 
 # ------------------- Metrics -------------------
@@ -390,4 +425,3 @@ def compute_retirement_metrics(
         "data_inicio": data_inicio,
         "data_fim": data_fim,
     }
-
