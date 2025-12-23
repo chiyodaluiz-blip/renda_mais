@@ -734,7 +734,7 @@ class PlanejadorPage(BasePage):
                 </style>
 
                 <div class="timeline-wrapper">
-                    <div class="timeline-title">Linha do tempo da aposentadoria</div>
+                    <h3 class="timeline-title">Linha do tempo da aposentadoria</h3>
                     {timeline_html}
                 </div>
                 """,
@@ -941,4 +941,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
