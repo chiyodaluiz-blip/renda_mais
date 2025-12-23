@@ -789,8 +789,6 @@ class PlanejadorPage(BasePage):
             )
 
             st.plotly_chart(fig, use_container_width=True)
-
-            st.markdown(f"**Renda média:** R$ {metrics['renda_media']:,.2f} – **mín:** R$ {metrics['renda_min']:,.2f} – **máx:** R$ {metrics['renda_max']:,.2f}")
         
 
         except ValueError as e:
@@ -939,3 +937,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
