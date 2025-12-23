@@ -612,38 +612,6 @@ class PlanejadorPage(BasePage):
 
 
             # -----------------------------
-            # Card: Resumo da Aposentadoria
-            # -----------------------------
-            investimento_total = df_aloc["investimento_sugerido"].sum()
-
-            components.html(
-                f"""
-                <h3>Resumo da Aposentadoria</h3>
-                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
-                    {kpi_card(
-                        "Início da renda",
-                        f"{metrics['idade_inicio_real']} anos",
-                        f"Ano {metrics['ano_inicio_pagamento']}"
-                    )}
-                    {kpi_card(
-                        "Fim da renda",
-                        f"{metrics['idade_fim_real']} anos",
-                        f"Ano {metrics['ano_fim_pagamento']}"
-                    )}
-                    {kpi_card(
-                        "Duração total",
-                        f"{metrics['duracao_anos']} anos",
-                        f"{metrics['duracao_meses']} meses"
-                    )}
-                    {kpi_card(
-                        "Investimento total",
-                        f"R$ {investimento_total:,.2f}"                    
-                    )}
-                </div>
-                """,
-                height=180,
-            )
-            # -----------------------------
             # Card: Linha do tempo 
             # -----------------------------
             
@@ -751,11 +719,28 @@ class PlanejadorPage(BasePage):
                 </style>
 
                 <div class="timeline-wrapper">
-                    <h3 class="timeline-title">Linha do tempo da aposentadoria</h3>
+                    <h3 class="timeline-title">Timeline</h3>
                     {timeline_html}
                 </div>
                 """,
                 height=150,
+            )
+
+            # -----------------------------
+            # Card: Resumo da Aposentadoria
+            # -----------------------------
+            investimento_total = df_aloc["investimento_sugerido"].sum()
+
+            components.html(
+                f"""
+                <h3>Resumo da Aposentadoria</h3>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
+                    {kpi_card("Início da renda", f"{metrics['idade_inicio_real']} anos", f"Ano {metrics['ano_inicio_pagamento']}")}
+                    {kpi_card("Fim da renda", f"{metrics['idade_fim_real']} anos", f"Ano {metrics['ano_fim_pagamento']}")}
+                    {kpi_card("Duração total", f"{metrics['duracao_anos']} anos", f"{metrics['duracao_meses']} meses")}
+                </div>
+                """,
+                height=180,
             )
 
             # -----------------------------
@@ -765,6 +750,7 @@ class PlanejadorPage(BasePage):
                 f"""
                 <h3>Renda Real Mensal (considerando apenas o período após aposentadoria)</h3>
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:20px;">
+                    {kpi_card("Investimento total", f"R$ {investimento_total:,.2f}")}
                     {kpi_card("Renda média", f"R$ {metrics['renda_media']:,.0f}")}
                     {kpi_card("Renda mínima", f"R$ {metrics['renda_min']:,.0f}")}
                     {kpi_card("Renda máxima", f"R$ {metrics['renda_max']:,.0f}")}
@@ -778,24 +764,10 @@ class PlanejadorPage(BasePage):
                 height=270,
             )
 
-            # -----------------------------
-            # Card: Comparação Idade
-            # -----------------------------
-            components.html(
-                f"""
-                <h3>Comparação com a média brasileira</h3>
-                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
-                    {kpi_card("Expectativa média (IBGE)", f"{metrics['expectativa_ibge']} anos")}
-                    {kpi_card("Cobertura além da média", f"{metrics['anos_folga']} anos")}
-                </div>
-                """,
-                height=180,
-            )
 
             # -----------------------------
             # Table: Grafico do fluxo
             # -----------------------------
-            st.write(f"**Investimento total sugerido: R$ {investimento_total:,.2f}**")
             st.subheader("Renda mensal REAL líquida simulada")
 
             fig = px.line(
@@ -819,10 +791,6 @@ class PlanejadorPage(BasePage):
 
             st.markdown(f"**Renda média:** R$ {metrics['renda_media']:,.2f} – **mín:** R$ {metrics['renda_min']:,.2f} – **máx:** R$ {metrics['renda_max']:,.2f}")
         
-            # métricas de qualidade do ajuste
-            desired = float(renda_desejada)
-            rmse = np.sqrt(((df_renda_otimizacao["renda_real_liquida"] - desired) ** 2).mean())
-            st.write(f"RMSE do ajuste: R$ {rmse:,.2f}")
 
         except ValueError as e:
             st.error(str(e))
