@@ -143,7 +143,6 @@ def clear_all_cache() -> None:
 @dataclass
 class BasePage:
     title: str
-    icon: str
 
     def render(self) -> None:
         raise NotImplementedError
@@ -153,7 +152,7 @@ import streamlit.components.v1 as components
 
 class HomePage(BasePage):
     def __init__(self, pages_meta: list[tuple[str, str]]):
-        super().__init__(title="HOME", icon="")
+        super().__init__(title="HOME")
         self.pages_meta = pages_meta
 
 
@@ -212,7 +211,7 @@ class HomePage(BasePage):
 
 class HistoricoPage(BasePage):
     def __init__(self):
-        super().__init__(title="Histórico de Preços", icon="")
+        super().__init__(title="Histórico de Preços")
 
     def render(self) -> None:
         components.html(
@@ -359,7 +358,7 @@ class HistoricoPage(BasePage):
 
 class SimuladorPage(BasePage):
     def __init__(self, simulator: RendaMaisSimulator):
-        super().__init__(title="Simulador de Fluxo (RendA+)", icon="")
+        super().__init__(title="Simulador de Fluxo (RendA+)")
         self.simulator = simulator
 
     def render(self) -> None:
@@ -490,7 +489,7 @@ class SimuladorPage(BasePage):
 
 class PlanejadorPage(BasePage):
     def __init__(self, planner: AposentadoriaPlanner):
-        super().__init__(title="Planejador de Aposentadoria", icon="")
+        super().__init__(title="Planejador de Aposentadoria")
         self.planner = planner
 
     def render(self) -> None:
@@ -672,7 +671,7 @@ class PlanejadorPage(BasePage):
 
 class PrecificadorPage(BasePage):
     def __init__(self, pricer: IPCAIndexedPricer, matcher: TesouroPriceMatcher):
-        super().__init__(title="Precificador (IPCA+ / RendA+)", icon="")
+        super().__init__(title="Precificador (IPCA+ / RendA+)")
         self.pricer = pricer
         self.matcher = matcher
 
@@ -797,7 +796,7 @@ class TesouroApp:
     def run(self) -> None:
         pages_def = []
         for page, slug in zip(self.pages, self.page_slugs):
-            pages_def.append(st.Page(page.render, title=page.title, icon=page.icon, url_path=slug))
+            pages_def.append(st.Page(page.render, title=page.title, url_path=slug))
         # navigation with default position = sidebar (lateral)
         nav = st.navigation(pages_def)
         nav.run()
