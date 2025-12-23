@@ -309,3 +309,73 @@ class AposentadoriaPlanner:
         })
 
         return df_aloc, df_renda
+
+
+# ------------------- Metrics -------------------
+
+def compute_retirement_metrics(
+    df_renda: pd.DataFrame,
+    renda_objetivo: float,
+    idade_atual: int,
+    idade_aposentadoria: int,
+    idade_fim_recebimento: int,
+    hoje: date,
+) -> dict:
+    """
+    df_renda: DataFrame com colunas ['data', 'renda_real_liquida']
+    """
+
+    renda = df_renda["renda_real_liquida"].values
+
+    renda_media = float(np.mean(renda))
+    renda_min = float(np.min(renda))
+    renda_max = float(np.max(renda))
+    volatilidade = float(np.std(renda))
+    volatilidade_pct = volatilidade / renda_media if renda_media > 0 else 0.0
+
+    meses_abaixo = int(np.sum(renda < renda_objetivo))
+    pior_gap_abs = float(np.min(renda - renda_objetivo))
+    pior_gap_pct = pior_gap_abs / renda_objetivo if renda_objetivo > 0 else 0.0
+
+    margem_seguranca = (renda_media - renda_objetivo) / renda_objetivo
+
+    duracao_anos = idade_fim_recebimento - idade_aposentadoria
+    duracao_meses = duracao_anos * 12
+
+    expectativa_media_ibge = 80  # proxy simples e conservador
+    anos_folga = idade_fim_recebimento - expectativa_media_ibge
+
+    data_inicio = df_renda["data"].min().date()
+    data_fim = df_renda["data"].max().date()
+
+    idade_inicio_real = idade_aposentadoria
+    idade_fim_real = idade_fim_recebimento
+
+    return {
+        # Tempo
+        "idade_inicio": idade_inicio_real,
+        "idade_fim": idade_fim_real,
+        "duracao_anos": duracao_anos,
+        "duracao_meses": duracao_meses,
+
+        # Renda
+        "renda_media": renda_media,
+        "renda_min": renda_min,
+        "renda_max": renda_max,
+        "volatilidade_abs": volatilidade,
+        "volatilidade_pct": volatilidade_pct,
+
+        # Segurança
+        "meses_abaixo_objetivo": meses_abaixo,
+        "pior_gap_abs": pior_gap_abs,
+        "pior_gap_pct": pior_gap_pct,
+        "margem_seguranca": margem_seguranca,
+
+        # Longevidade
+        "expectativa_ibge": expectativa_media_ibge,
+        "anos_folga": anos_folga,
+
+        # Datas
+        "data_inicio": data_inicio,
+        "data_fim": data_fim,
+    }
