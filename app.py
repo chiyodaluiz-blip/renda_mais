@@ -14,6 +14,12 @@ from tesouro_data import TesouroDiretoRepository, VnaRepository
 from renda_mais_domain import RendaMaisSimulator, RendaMaisOperation, AposentadoriaPlanner
 from pricing_domain import IPCAIndexedPricer, TesouroPriceMatcher, BondSpec
 
+# desing UI themes/icons
+from ui.theme import global_css
+from ui.icons import icon
+import streamlit.components.v1 as components
+st.markdown(global_css(), unsafe_allow_html=True)
+
 # -----------------------
 # Config geral / tema
 # -----------------------
@@ -151,111 +157,50 @@ class HomePage(BasePage):
 
     def render(self) -> None:
         components.html(
-            """
+            f"""
             <style>
-            body {
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            }
-            .container {
+            .container {{
                 max-width: 1100px;
                 padding: 20px 10px;
-            }
-            h1 {
-                font-size: 42px;
-                color: #0B1F3B;
-                margin-bottom: 6px;
-            }
-            .subtitle {
-                font-size: 18px;
-                color: #475569;
-                margin-bottom: 32px;
-            }
-            .cards {
+            }}
+            .cards {{
                 display: grid;
                 grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
                 gap: 24px;
-            }
-            .card {
+            }}
+            .card {{
                 background: linear-gradient(180deg, #FFFFFF, #F6F8FB);
                 border-radius: 18px;
                 padding: 24px;
                 border: 1px solid rgba(11,31,59,0.08);
                 box-shadow: 0 10px 30px rgba(11,31,59,0.08);
                 transition: transform .18s ease, box-shadow .18s ease;
-            }
-            .card:hover {
+            }}
+            .card:hover {{
                 transform: translateY(-6px);
                 box-shadow: 0 18px 45px rgba(11,31,59,0.14);
-            }
-            .icon {
-                width: 44px;
-                height: 44px;
-                margin-bottom: 14px;
-            }
-            .card h3 {
-                font-size: 18px;
-                margin-bottom: 6px;
-                color: #0B1F3B;
-            }
-            .card p {
-                font-size: 14px;
-                color: #475569;
-            }
-            .hint {
+            }}
+            .hint {{
                 margin-top: 28px;
                 font-size: 14px;
                 color: #64748B;
-            }
+            }}
             </style>
 
             <div class="container">
-                <h1>Planejamento Financeiro com Tesouro Direto</h1>
-                <div class="subtitle">
-                    Ferramentas profissionais para análise de preços, fluxo de caixa e planejamento de renda real com títulos IPCA+ e RendA+.
-                </div>
+              <h1>Planejamento Financeiro com Tesouro Direto</h1>
+              <p style="font-size:18px;color:#475569;margin-bottom:32px;">
+                Ferramentas profissionais para análise de preços, fluxo de caixa e planejamento de renda real.
+              </p>
 
-                <div class="cards">
-                    <div class="card">
-                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#1F4E79" stroke-width="2">
-                            <path d="M3 3v18h18"/>
-                            <path d="M18 9l-5 5-4-4-3 3"/>
-                        </svg>
-                        <h3>Histórico de Preços</h3>
-                        <p>Visualize séries históricas de PU e taxas reais por título e vencimento.</p>
-                    </div>
+              <div class="cards">
+                <div class="card">{icon("history",42)}<h3>Histórico de Preços</h3><p>Séries históricas de PU e taxas reais.</p></div>
+                <div class="card">{icon("simulator",42)}<h3>Simulador de Fluxo</h3><p>Fluxos mensais de renda do RendA+.</p></div>
+                <div class="card">{icon("planner",42)}<h3>Planejador</h3><p>Alocação ótima para renda real.</p></div>
+                <div class="card">{icon("pricing",42)}<h3>Precificador</h3><p>Preço teórico vs Tesouro Direto.</p></div>
+              </div>
 
-                    <div class="card">
-                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#1F4E79" stroke-width="2">
-                            <rect x="3" y="4" width="18" height="14"/>
-                            <path d="M8 20h8"/>
-                        </svg>
-                        <h3>Simulador de Fluxo (RendA+)</h3>
-                        <p>Simule fluxos mensais de renda, juros, amortização e imposto.</p>
-                    </div>
-
-                    <div class="card">
-                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#1F4E79" stroke-width="2">
-                            <circle cx="12" cy="7" r="4"/>
-                            <path d="M5.5 21a6.5 6.5 0 0113 0"/>
-                        </svg>
-                        <h3>Planejador de Aposentadoria</h3>
-                        <p>Calcule a alocação ótima em RendA+ para garantir renda real estável.</p>
-                    </div>
-
-                    <div class="card">
-                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#1F4E79" stroke-width="2">
-                            <path d="M12 1v22"/>
-                            <path d="M5 6h14"/>
-                            <path d="M5 18h14"/>
-                        </svg>
-                        <h3>Precificador</h3>
-                        <p>Compare preços teóricos vs. Tesouro Direto para IPCA+ e RendA+.</p>
-                    </div>
-                </div>
-
-                <div class="hint">
-                    👉 Use o menu lateral à esquerda para acessar cada ferramenta.
-                </div>
+              <div class="hint">👉 Use o menu lateral para navegar</div>
             </div>
             """,
             height=620,
@@ -268,7 +213,15 @@ class HistoricoPage(BasePage):
         super().__init__(title="Histórico de Preços", icon="📈")
 
     def render(self) -> None:
-        st.header(f"{self.icon} {self.title}")
+        components.html(
+            f"""
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;">
+                {icon("history", 30)}
+                <h2 style="margin:0;">{self.title}</h2>
+            </div>
+            """,
+            height=60,
+        )
         st.markdown("Escolha os filtros abaixo e clique em **Aplicar filtros**.")
 
         with st.spinner("Carregando histórico do Tesouro Direto (cache)..."):
@@ -408,7 +361,15 @@ class SimuladorPage(BasePage):
         self.simulator = simulator
 
     def render(self) -> None:
-        st.header(f"{self.icon} {self.title}")
+        components.html(
+            f"""
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;">
+                {icon("simulator", 30)}
+                <h2 style="margin:0;">{self.title}</h2>
+            </div>
+            """,
+            height=60,
+        )
 
         vencimentos_validos = [2030, 2035, 2040, 2045, 2050, 2055, 2060, 2065]
         hoje = date.today()
@@ -531,7 +492,15 @@ class PlanejadorPage(BasePage):
         self.planner = planner
 
     def render(self) -> None:
-        st.header(f"{self.icon} {self.title}")
+        components.html(
+            f"""
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;">
+                {icon("planner", 30)}
+                <h2 style="margin:0;">{self.title}</h2>
+            </div>
+            """,
+            height=60,
+        )
         hoje = date.today()
 
         with st.form("form_planejador"):
@@ -647,7 +616,15 @@ class PrecificadorPage(BasePage):
         self.matcher = matcher
 
     def render(self) -> None:
-        st.header(f"{self.icon} {self.title}")
+        components.html(
+            f"""
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;">
+                {icon("pricer", 30)}
+                <h2 style="margin:0;">{self.title}</h2>
+            </div>
+            """,
+            height=60,
+        )
         hoje = date.today()
 
         with st.form("form_precificador"):
