@@ -599,9 +599,21 @@ class PlanejadorPage(BasePage):
                 f"""
                 <h3>Resumo da Aposentadoria</h3>
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
-                    {kpi_card("Início da renda", f"{metrics['idade_inicio']} anos")}
-                    {kpi_card("Fim da renda", f"{metrics['idade_fim']} anos")}
-                    {kpi_card("Duração", f"{metrics['duracao_anos']} anos", f"{metrics['duracao_meses']} meses")}
+                    {kpi_card(
+                        "Início da renda",
+                        f"{metrics['idade_inicio_real']} anos",
+                        f"Ano {metrics['ano_inicio_pagamento']}"
+                    )}
+                    {kpi_card(
+                        "Fim da renda",
+                        f"{metrics['idade_fim_real']} anos",
+                        f"Ano {metrics['ano_fim_pagamento']}"
+                    )}
+                    {kpi_card(
+                        "Duração total",
+                        f"{metrics['duracao_anos']} anos",
+                        f"{metrics['duracao_meses']} meses"
+                    )}
                 </div>
                 """,
                 height=180,
@@ -609,14 +621,15 @@ class PlanejadorPage(BasePage):
 
             components.html(
                 f"""
-                <h3>Resumo da Aposentadoria</h3>
+                <h3>Renda Real Mensal</h3>
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
-                    {kpi_card("Início da renda", f"{metrics['idade_inicio']} anos")}
-                    {kpi_card("Fim da renda", f"{metrics['idade_fim']} anos")}
-                    {kpi_card("Duração", f"{metrics['duracao_anos']} anos", f"{metrics['duracao_meses']} meses")}
+                    {kpi_card("Renda média", f"R$ {metrics['renda_media']:,.0f}")}
+                    {kpi_card("Renda mínima", f"R$ {metrics['renda_min']:,.0f}")}
+                    {kpi_card("Renda máxima", f"R$ {metrics['renda_max']:,.0f}")}
+                    {kpi_card("Volatilidade", f"±{metrics['volatilidade_pct']*100:.1f}%")}
                 </div>
                 """,
-                height=180,
+                height=220,
             )
 
             components.html(
@@ -633,14 +646,13 @@ class PlanejadorPage(BasePage):
             
             components.html(
                 f"""
-                <h3>Segurança do Plano</h3>
+                <h3>Longevidade</h3>
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
-                    {kpi_card("Margem de segurança", f"{metrics['margem_seguranca']*100:.1f}%")}
-                    {kpi_card("Meses abaixo do alvo", f"{metrics['meses_abaixo_objetivo']}")}
-                    {kpi_card("Pior mês", f"R$ {metrics['pior_gap_abs']:,.0f}", f"{metrics['pior_gap_pct']*100:.1f}% vs alvo")}
+                    {kpi_card("Expectativa média (IBGE)", f"{metrics['expectativa_ibge']} anos")}
+                    {kpi_card("Cobertura além da média", f"{metrics['anos_folga']} anos")}
                 </div>
                 """,
-                height=220,
+                height=180,
             )
 
 
