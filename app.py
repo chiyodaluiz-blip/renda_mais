@@ -618,6 +618,99 @@ class PlanejadorPage(BasePage):
                 """,
                 height=180,
             )
+            # -----------------------------
+            # Linha do tempo visual
+            # -----------------------------
+            ano_atual = hoje.year
+            ano_aposentadoria = ano_atual + (idade_aposentadoria - idade_atual)
+
+            components.html(
+                f"""
+                <style>
+                .timeline-wrapper {{
+                    margin: 28px 0 36px 0;
+                }}
+                .timeline {{
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    position: relative;
+                    margin-top: 18px;
+                }}
+                .timeline::before {{
+                    content: "";
+                    position: absolute;
+                    top: 50%;
+                    left: 0;
+                    right: 0;
+                    height: 2px;
+                    background: #CBD5E1;
+                    z-index: 0;
+                }}
+                .milestone {{
+                    position: relative;
+                    background: #F8FAFC;
+                    padding: 6px 8px;
+                    text-align: center;
+                    z-index: 1;
+                    min-width: 90px;
+                }}
+                .dot {{
+                    width: 14px;
+                    height: 14px;
+                    background: #1F4E79;
+                    border-radius: 50%;
+                    margin: 0 auto 6px auto;
+                }}
+                .label {{
+                    font-size: 12px;
+                    color: #475569;
+                }}
+                .value {{
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: #0B1F3B;
+                }}
+                .title {{
+                    font-size: 14px;
+                    font-weight: 600;
+                    color: #0B1F3B;
+                    margin-bottom: 6px;
+                }}
+                </style>
+
+                <div class="timeline-wrapper">
+                    <div class="title">Linha do tempo da aposentadoria</div>
+
+                    <div class="timeline">
+                        <div class="milestone">
+                            <div class="dot"></div>
+                            <div class="value">{idade_atual} anos</div>
+                            <div class="label">Hoje ({ano_atual})</div>
+                        </div>
+
+                        <div class="milestone">
+                            <div class="dot"></div>
+                            <div class="value">{idade_aposentadoria} anos</div>
+                            <div class="label">Aposentadoria ({ano_aposentadoria})</div>
+                        </div>
+
+                        <div class="milestone">
+                            <div class="dot"></div>
+                            <div class="value">{metrics['idade_inicio_real']} anos</div>
+                            <div class="label">Início da renda ({metrics['ano_inicio_pagamento']})</div>
+                        </div>
+
+                        <div class="milestone">
+                            <div class="dot"></div>
+                            <div class="value">{metrics['idade_fim_real']} anos</div>
+                            <div class="label">Fim da renda ({metrics['ano_fim_pagamento']})</div>
+                        </div>
+                    </div>
+                </div>
+                """,
+                height=170,
+            )
 
             components.html(
                 f"""
@@ -628,25 +721,19 @@ class PlanejadorPage(BasePage):
                     {kpi_card("Renda máxima", f"R$ {metrics['renda_max']:,.0f}")}
                     {kpi_card("Volatilidade", f"±{metrics['volatilidade_pct']*100:.1f}%")}
                 </div>
-                """,
-                height=220,
-            )
-
-            components.html(
-                f"""
-                <h3>Segurança do Plano</h3>
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
                     {kpi_card("Margem de segurança", f"{metrics['margem_seguranca']*100:.1f}%")}
                     {kpi_card("Meses abaixo do alvo", f"{metrics['meses_abaixo_objetivo']}")}
                     {kpi_card("Pior mês", f"R$ {metrics['pior_gap_abs']:,.0f}", f"{metrics['pior_gap_pct']*100:.1f}% vs alvo")}
                 </div>
+
                 """,
                 height=220,
             )
             
             components.html(
                 f"""
-                <h3>Longevidade</h3>
+                <h3>Comparação com a média brasileira</h3>
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
                     {kpi_card("Expectativa média (IBGE)", f"{metrics['expectativa_ibge']} anos")}
                     {kpi_card("Cobertura além da média", f"{metrics['anos_folga']} anos")}
