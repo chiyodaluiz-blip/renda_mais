@@ -191,17 +191,17 @@ class HomePage(BasePage):
             <div class="container">
               <h1>Planejamento Financeiro com Tesouro Direto</h1>
               <p style="font-size:18px;color:#475569;margin-bottom:32px;">
-                Ferramentas para análise de preços, fluxo de caixa e planejamento de renda real.
+                Ferramentas para análise de preços, fluxo de caixa e planejamento de renda real. Use a barra lateral para acessar as ferramentas
               </p>
 
               <div class="cards">
                 <div class="card">{icon("history",42)}<h3>Histórico de Preços</h3><p>Séries históricas de PU e taxas reais.</p></div>
-                <div class="card">{icon("simulator",42)}<h3>Simulador de Fluxo</h3><p>Fluxos mensais de renda do RendA+.</p></div>
                 <div class="card">{icon("planner",42)}<h3>Planejador</h3><p>Alocação ótima para renda real.</p></div>
+                <div class="card">{icon("simulator",42)}<h3>Simulador de Fluxo</h3><p>Fluxos mensais de renda do RendA+.</p></div>
                 <div class="card">{icon("pricing",42)}<h3>Precificador</h3><p>Preço teórico vs Tesouro Direto.</p></div>
               </div>
 
-              <div class="hint">👉 Use o menu lateral para navegar</div>
+              <div class="hint"></div>
             </div>
             """,
             height=620,
@@ -799,7 +799,7 @@ class PlanejadorPage(BasePage):
 
 class PrecificadorPage(BasePage):
     def __init__(self, pricer: IPCAIndexedPricer, matcher: TesouroPriceMatcher):
-        super().__init__(title="Precificador (IPCA+ / RendA+)")
+        super().__init__(title="[BETA] Precificador (IPCA+ / RendA+)")
         self.pricer = pricer
         self.matcher = matcher
 
@@ -909,9 +909,9 @@ class TesouroApp:
 
         # páginas: HOME primeiro
         # slugs must be unique
-        self.page_slugs = ["home", "historico", "simulador", "planejador", "precificador"]
+        self.page_slugs = ["home", "planejador", "simulador", "historico", "precificador"]
         # map slugs -> title for home buttons
-        pages_meta = [(s, t) for s, t in zip(self.page_slugs[1:], ["Histórico de Preços", "Simulador de Fluxo", "Planejador de Aposentadoria", "Precificador"])]
+        pages_meta = [(s, t) for s, t in zip(self.page_slugs[1:], ["Planejador de Aposentadoria", "Simulador de Fluxo", "Histórico de Preços", "Precificador"])]
 
         self.pages = [
             HomePage(pages_meta),
@@ -937,4 +937,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
