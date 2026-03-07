@@ -217,121 +217,60 @@ def _build_candidate_headers(raw: pd.DataFrame, header_idx: int) -> list[list[st
 
 
 def parse_tesouro_trades_xlsx(file_bytes: bytes, file_name: str) -> tuple[pd.DataFrame, list[str]]:
-    warnings: list[str] = []
-    frames: list[pd.DataFrame] = []
-    anos_validos = [2030, 2035, 2040, 2045, 2050, 2055, 2060, 2065]
+    warnings = []
+    rows = []
 
     try:
         workbook = pd.ExcelFile(io.BytesIO(file_bytes))
     except Exception as exc:
         return pd.DataFrame(), [f"Falha ao abrir arquivo Excel: {exc}"]
 
-    ano_do_arquivo: int | None = None
+    anos_validos = [2030, 2035, 2040, 2045, 2050, 2055, 2060, 2065]
+
+    ano_detectado = None
     nome_match = re.search(r"(20\d{2})", file_name)
     if nome_match:
-        ano_nome = int(nome_match.group(1))
-        if ano_nome in anos_validos:
-            ano_do_arquivo = ano_nome
+        ano = int(nome_match.group(1))
+        if ano in anos_validos:
+            ano_detectado = ano
 
     for sheet in workbook.sheet_names:
-        raw = pd.read_excel(workbook, sheet_name=sheet, header=None)
-        raw = raw.dropna(how="all")
-        if raw.empty:
-            continue
 
-        if ano_do_arquivo is None:
-            ano_do_arquivo = _extract_renda_mais_ano(raw.stack(dropna=True))
+        df = pd.read_excel(workbook, sheet_name=sheet, header=None)
 
-        header_idx = None
-        for idx in raw.index:
-            row_norm = [_normalize_text(v) for v in raw.loc[idx].tolist()]
-            if any(
-                ("data da aplicacao" in cell)
-                or ("data aplicacao" in cell)
-                or ("data da aplicacao em" in cell)
-                for cell in row_norm
-            ):
-                header_idx = idx
-                break
+        for _, r in df.iterrows():
 
-        if header_idx is None:
-            continue
+            data = pd.to_datetime(r[0], dayfirst=True, errors="coerce")
 
-        header_variants = _build_candidate_headers(raw, header_idx)
-
-        table = None
-        col_data = None
-        col_valor = None
-        col_taxa = None
-
-        for header_try in header_variants:
-            table_try = raw.loc[header_idx + 1 :].copy()
-            table_try.columns = header_try
-            table_try = table_try.dropna(how="all")
-            if table_try.empty:
+            if pd.isna(data):
                 continue
 
-            col_data_try = None
-            col_valor_try = None
-            col_taxa_try = None
-            for col in table_try.columns:
-                col_norm = _normalize_text(col)
-                if (
-                    "data da aplicacao" in col_norm
-                    or "data aplicacao" in col_norm
-                    or "data da aplicacao em" in col_norm
-                ):
-                    col_data_try = col
-                elif "valor investido" in col_norm:
-                    col_valor_try = col
-                elif "rentabilidade contratada" in col_norm:
-                    col_taxa_try = col
+            valor = _parse_ptbr_number(r[3])
 
-            if col_data_try is not None and col_valor_try is not None:
-                table = table_try
-                col_data = col_data_try
-                col_valor = col_valor_try
-                col_taxa = col_taxa_try
-                break
-
-        if table is None or col_data is None or col_valor is None:
-            warnings.append(f"Aba '{sheet}' ignorada: cabeçalho esperado não localizado (Data da aplicação / Valor investido).")
-            continue
-
-        ano_para_linha = ano_do_arquivo if ano_do_arquivo in anos_validos else anos_validos[-1]
-
-        parsed_rows = []
-        for _, row in table.iterrows():
-            data_compra = pd.to_datetime(row[col_data], dayfirst=True, errors="coerce")
-            valor_investido = _parse_ptbr_number(row[col_valor])
-            taxa_real = _parse_taxa_real_percent(row[col_taxa]) if col_taxa else None
-
-            if pd.isna(data_compra) or not valor_investido or valor_investido <= 0:
+            if valor is None or valor <= 0:
                 continue
 
-            parsed_rows.append(
-                {
-                    "Data compra": data_compra,
-                    "Ano conversão": ano_para_linha,
-                    "Taxa real (%)": float(taxa_real if taxa_real is not None else 7.0),
-                    "Valor investido (R$)": float(valor_investido),
-                }
-            )
+            if ano_detectado is None:
+                ano_detectado = _extract_renda_mais_ano(df.stack())
 
-        if parsed_rows:
-            frames.append(pd.DataFrame(parsed_rows))
-        else:
-            warnings.append(
-                f"Aba '{sheet}' lida, mas sem linhas válidas de operação (verifique se há datas e valores investidos positivos)."
-            )
+            if ano_detectado not in anos_validos:
+                ano_detectado = anos_validos[-1]
 
-    if not frames:
-        warnings.append("Nenhuma operação foi identificada no layout do extrato analítico do Tesouro Direto.")
+            rows.append({
+                "Data compra": data,
+                "Ano conversão": ano_detectado,
+                "Taxa real (%)": 7.0,
+                "Valor investido (R$)": float(valor),
+            })
+
+    if not rows:
+        warnings.append("Nenhuma operação foi identificada no arquivo importado.")
         return pd.DataFrame(), warnings
 
-    df_final = pd.concat(frames, ignore_index=True)
+    df_final = pd.DataFrame(rows)
     df_final.insert(0, "Operação", np.arange(1, len(df_final) + 1))
-    return df_final, warnings
+
+    return df_final, warnings  
 
 
 # ==============================
