@@ -572,8 +572,6 @@ class SimuladorPage(BasePage):
             st.session_state["simulador_import_warnings"] = []
             st.session_state["simulador_hash_arquivos"] = None
         
-            st.session_state["simulador_upload_trades"] = None
-        
             st.rerun()
 
         with st.form("form_simulador_fluxo"):
