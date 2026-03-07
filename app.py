@@ -538,7 +538,7 @@ class SimuladorPage(BasePage):
             st.session_state["simulador_arquivo_nome"] = None
 
         if arquivo_trades is not None and arquivo_trades.name != st.session_state.get("simulador_arquivo_nome"):
-            imported_ops, import_warnings = parse_tesouro_trades_xlsx(arquivo_trades.getvalue(), arquivo_trades.name)
+            imported_ops, import_warnings = parse_tesouro_trades_xlsx(arquivo_trades)
             st.session_state["simulador_ops_importadas"] = imported_ops
             st.session_state["simulador_import_warnings"] = import_warnings
             st.session_state["simulador_arquivo_nome"] = arquivo_trades.name
