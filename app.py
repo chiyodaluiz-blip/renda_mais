@@ -191,6 +191,31 @@ def _extract_renda_mais_ano(text_series: pd.Series) -> int | None:
     return None
 
 
+def _build_candidate_headers(raw: pd.DataFrame, header_idx: int) -> list[list[str]]:
+    """Monta variações de cabeçalho para lidar com células mescladas/múltiplas linhas."""
+    row_curr = [str(x).strip() if pd.notna(x) else "" for x in raw.loc[header_idx].tolist()]
+    candidates: list[list[str]] = [row_curr]
+
+    next_idx = header_idx + 1
+    if next_idx in raw.index:
+        row_next = [str(x).strip() if pd.notna(x) else "" for x in raw.loc[next_idx].tolist()]
+        combined = [
+            " ".join([part for part in [a, b] if part]).strip()
+            for a, b in zip(row_curr, row_next)
+        ]
+        candidates.extend([combined, row_next])
+
+    # remove duplicados preservando ordem
+    unique: list[list[str]] = []
+    seen = set()
+    for cand in candidates:
+        key = tuple(cand)
+        if key not in seen:
+            seen.add(key)
+            unique.append(cand)
+    return unique
+
+
 def parse_tesouro_trades_xlsx(file_bytes: bytes, file_name: str) -> tuple[pd.DataFrame, list[str]]:
     warnings: list[str] = []
     frames: list[pd.DataFrame] = []
@@ -220,34 +245,57 @@ def parse_tesouro_trades_xlsx(file_bytes: bytes, file_name: str) -> tuple[pd.Dat
         header_idx = None
         for idx in raw.index:
             row_norm = [_normalize_text(v) for v in raw.loc[idx].tolist()]
-            if any("data da aplicacao" in cell for cell in row_norm):
+            if any(
+                ("data da aplicacao" in cell)
+                or ("data aplicacao" in cell)
+                or ("data da aplicacao em" in cell)
+                for cell in row_norm
+            ):
                 header_idx = idx
                 break
 
         if header_idx is None:
             continue
 
-        headers = [str(x).strip() if pd.notna(x) else "" for x in raw.loc[header_idx].tolist()]
-        table = raw.loc[header_idx + 1 :].copy()
-        table.columns = headers
-        table = table.dropna(how="all")
-        if table.empty:
-            continue
+        header_variants = _build_candidate_headers(raw, header_idx)
 
+        table = None
         col_data = None
         col_valor = None
         col_taxa = None
-        for col in table.columns:
-            col_norm = _normalize_text(col)
-            if "data da aplicacao" in col_norm:
-                col_data = col
-            elif "valor investido" in col_norm:
-                col_valor = col
-            elif "rentabilidade contratada" in col_norm:
-                col_taxa = col
 
-        if col_data is None or col_valor is None:
-            warnings.append(f"Aba '{sheet}' ignorada: colunas obrigatórias não encontradas.")
+        for header_try in header_variants:
+            table_try = raw.loc[header_idx + 1 :].copy()
+            table_try.columns = header_try
+            table_try = table_try.dropna(how="all")
+            if table_try.empty:
+                continue
+
+            col_data_try = None
+            col_valor_try = None
+            col_taxa_try = None
+            for col in table_try.columns:
+                col_norm = _normalize_text(col)
+                if (
+                    "data da aplicacao" in col_norm
+                    or "data aplicacao" in col_norm
+                    or "data da aplicacao em" in col_norm
+                ):
+                    col_data_try = col
+                elif "valor investido" in col_norm:
+                    col_valor_try = col
+                elif "rentabilidade contratada" in col_norm:
+                    col_taxa_try = col
+
+            if col_data_try is not None and col_valor_try is not None:
+                table = table_try
+                col_data = col_data_try
+                col_valor = col_valor_try
+                col_taxa = col_taxa_try
+                break
+
+        if table is None or col_data is None or col_valor is None:
+            warnings.append(f"Aba '{sheet}' ignorada: cabeçalho esperado não localizado (Data da aplicação / Valor investido).")
             continue
 
         ano_para_linha = ano_do_arquivo if ano_do_arquivo in anos_validos else anos_validos[-1]
@@ -272,6 +320,10 @@ def parse_tesouro_trades_xlsx(file_bytes: bytes, file_name: str) -> tuple[pd.Dat
 
         if parsed_rows:
             frames.append(pd.DataFrame(parsed_rows))
+        else:
+            warnings.append(
+                f"Aba '{sheet}' lida, mas sem linhas válidas de operação (verifique se há datas e valores investidos positivos)."
+            )
 
     if not frames:
         warnings.append("Nenhuma operação foi identificada no layout do extrato analítico do Tesouro Direto.")
@@ -1145,5 +1197,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 
