@@ -541,7 +541,7 @@ class SimuladorPage(BasePage):
         if "simulador_hash_arquivos" not in st.session_state:
             st.session_state["simulador_hash_arquivos"] = None
 
-        if arquivo_trades:
+        if arquivo_trades and st.session_state["simulador_hash_arquivos"] != "CLEARED":
         
             hash_atual = tuple(sorted(f.name for f in arquivo_trades))
         
@@ -570,7 +570,7 @@ class SimuladorPage(BasePage):
         
             st.session_state["simulador_ops_importadas"] = pd.DataFrame()
             st.session_state["simulador_import_warnings"] = []
-            st.session_state["simulador_hash_arquivos"] = None
+            st.session_state["simulador_hash_arquivos"] = "CLEARED"
         
             st.rerun()
 
