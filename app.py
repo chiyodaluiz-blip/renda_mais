@@ -3,6 +3,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, timedelta
+import io
+import re
+import unicodedata
 import pandas as pd
 import numpy as np
 import plotly.express as px
@@ -135,6 +138,200 @@ def load_and_prepare_history() -> pd.DataFrame:
 def clear_all_cache() -> None:
     st.cache_data.clear()
     st.cache_resource.clear()
+
+
+def _normalize_text(value: object) -> str:
+    text = str(value or "").strip()
+    text = unicodedata.normalize("NFKD", text)
+    text = "".join(ch for ch in text if not unicodedata.combining(ch))
+    return text.lower()
+
+
+def _parse_ptbr_number(value: object) -> float | None:
+    if value is None or (isinstance(value, float) and np.isnan(value)):
+        return None
+    if isinstance(value, (int, float, np.number)):
+        return float(value)
+    text = str(value).strip()
+    if not text:
+        return None
+    text = text.replace("R$", "").replace(" ", "")
+    text = text.replace(".", "").replace(",", ".")
+    text = re.sub(r"[^0-9+\-.]", "", text)
+    if text in {"", ".", "-", "+"}:
+        return None
+    try:
+        return float(text)
+    except ValueError:
+        return None
+
+
+def _parse_taxa_real_percent(value: object) -> float | None:
+    if value is None or (isinstance(value, float) and np.isnan(value)):
+        return None
+    if isinstance(value, (int, float, np.number)):
+        return float(value)
+
+    text = str(value)
+    matches = re.findall(r"([+-]?\d+[\.,]?\d*)\s*%", text)
+    if not matches:
+        return None
+    return _parse_ptbr_number(matches[-1])
+
+
+def _extract_renda_mais_ano(text_series: pd.Series) -> int | None:
+    anos_validos = {2030, 2035, 2040, 2045, 2050, 2055, 2060, 2065}
+    for value in text_series.dropna().astype(str):
+        m = re.search(r"renda\+?.{0,60}?(20\d{2})", value, flags=re.IGNORECASE)
+        if not m:
+            continue
+        ano = int(m.group(1))
+        if ano in anos_validos:
+            return ano
+    return None
+
+
+def _build_candidate_headers(raw: pd.DataFrame, header_idx: int) -> list[list[str]]:
+    """Monta variações de cabeçalho para lidar com células mescladas/múltiplas linhas."""
+    row_curr = [str(x).strip() if pd.notna(x) else "" for x in raw.loc[header_idx].tolist()]
+    candidates: list[list[str]] = [row_curr]
+
+    next_idx = header_idx + 1
+    if next_idx in raw.index:
+        row_next = [str(x).strip() if pd.notna(x) else "" for x in raw.loc[next_idx].tolist()]
+        combined = [
+            " ".join([part for part in [a, b] if part]).strip()
+            for a, b in zip(row_curr, row_next)
+        ]
+        candidates.extend([combined, row_next])
+
+    # remove duplicados preservando ordem
+    unique: list[list[str]] = []
+    seen = set()
+    for cand in candidates:
+        key = tuple(cand)
+        if key not in seen:
+            seen.add(key)
+            unique.append(cand)
+    return unique
+
+
+def parse_tesouro_trades_xlsx(file_bytes: bytes, file_name: str) -> tuple[pd.DataFrame, list[str]]:
+    warnings: list[str] = []
+    frames: list[pd.DataFrame] = []
+    anos_validos = [2030, 2035, 2040, 2045, 2050, 2055, 2060, 2065]
+
+    try:
+        workbook = pd.ExcelFile(io.BytesIO(file_bytes))
+    except Exception as exc:
+        return pd.DataFrame(), [f"Falha ao abrir arquivo Excel: {exc}"]
+
+    ano_do_arquivo: int | None = None
+    nome_match = re.search(r"(20\d{2})", file_name)
+    if nome_match:
+        ano_nome = int(nome_match.group(1))
+        if ano_nome in anos_validos:
+            ano_do_arquivo = ano_nome
+
+    for sheet in workbook.sheet_names:
+        raw = pd.read_excel(workbook, sheet_name=sheet, header=None)
+        raw = raw.dropna(how="all")
+        if raw.empty:
+            continue
+
+        if ano_do_arquivo is None:
+            ano_do_arquivo = _extract_renda_mais_ano(raw.stack(dropna=True))
+
+        header_idx = None
+        for idx in raw.index:
+            row_norm = [_normalize_text(v) for v in raw.loc[idx].tolist()]
+            if any(
+                ("data da aplicacao" in cell)
+                or ("data aplicacao" in cell)
+                or ("data da aplicacao em" in cell)
+                for cell in row_norm
+            ):
+                header_idx = idx
+                break
+
+        if header_idx is None:
+            continue
+
+        header_variants = _build_candidate_headers(raw, header_idx)
+
+        table = None
+        col_data = None
+        col_valor = None
+        col_taxa = None
+
+        for header_try in header_variants:
+            table_try = raw.loc[header_idx + 1 :].copy()
+            table_try.columns = header_try
+            table_try = table_try.dropna(how="all")
+            if table_try.empty:
+                continue
+
+            col_data_try = None
+            col_valor_try = None
+            col_taxa_try = None
+            for col in table_try.columns:
+                col_norm = _normalize_text(col)
+                if (
+                    "data da aplicacao" in col_norm
+                    or "data aplicacao" in col_norm
+                    or "data da aplicacao em" in col_norm
+                ):
+                    col_data_try = col
+                elif "valor investido" in col_norm:
+                    col_valor_try = col
+                elif "rentabilidade contratada" in col_norm:
+                    col_taxa_try = col
+
+            if col_data_try is not None and col_valor_try is not None:
+                table = table_try
+                col_data = col_data_try
+                col_valor = col_valor_try
+                col_taxa = col_taxa_try
+                break
+
+        if table is None or col_data is None or col_valor is None:
+            warnings.append(f"Aba '{sheet}' ignorada: cabeçalho esperado não localizado (Data da aplicação / Valor investido).")
+            continue
+
+        ano_para_linha = ano_do_arquivo if ano_do_arquivo in anos_validos else anos_validos[-1]
+
+        parsed_rows = []
+        for _, row in table.iterrows():
+            data_compra = pd.to_datetime(row[col_data], dayfirst=True, errors="coerce")
+            valor_investido = _parse_ptbr_number(row[col_valor])
+            taxa_real = _parse_taxa_real_percent(row[col_taxa]) if col_taxa else None
+
+            if pd.isna(data_compra) or not valor_investido or valor_investido <= 0:
+                continue
+
+            parsed_rows.append(
+                {
+                    "Data compra": data_compra,
+                    "Ano conversão": ano_para_linha,
+                    "Taxa real (%)": float(taxa_real if taxa_real is not None else 7.0),
+                    "Valor investido (R$)": float(valor_investido),
+                }
+            )
+
+        if parsed_rows:
+            frames.append(pd.DataFrame(parsed_rows))
+        else:
+            warnings.append(
+                f"Aba '{sheet}' lida, mas sem linhas válidas de operação (verifique se há datas e valores investidos positivos)."
+            )
+
+    if not frames:
+        warnings.append("Nenhuma operação foi identificada no layout do extrato analítico do Tesouro Direto.")
+        return pd.DataFrame(), warnings
+
+    df_final = pd.concat(frames, ignore_index=True)
+    df_final.insert(0, "Operação", np.arange(1, len(df_final) + 1))
+    return df_final, warnings
 
 
 # ==============================
@@ -376,6 +573,44 @@ class SimuladorPage(BasePage):
         hoje = date.today()
         data_padrao = date(hoje.year, hoje.month, min(hoje.day, 28))
 
+        st.markdown("**Importar operações do Extrato Analítico (Tesouro Direto)**")
+        arquivo_trades = st.file_uploader(
+            "Selecione o arquivo .xlsx exportado do Tesouro Direto",
+            type=["xlsx"],
+            help="Layout esperado: planilha de Extrato Analítico com colunas como 'Data da aplicação' e 'Valor investido (R$)'.",
+            key="simulador_upload_trades",
+        )
+
+        if "simulador_ops_importadas" not in st.session_state:
+            st.session_state["simulador_ops_importadas"] = pd.DataFrame()
+            st.session_state["simulador_import_warnings"] = []
+            st.session_state["simulador_arquivo_nome"] = None
+
+        if arquivo_trades is not None and arquivo_trades.name != st.session_state.get("simulador_arquivo_nome"):
+            imported_ops, import_warnings = parse_tesouro_trades_xlsx(arquivo_trades.getvalue(), arquivo_trades.name)
+            st.session_state["simulador_ops_importadas"] = imported_ops
+            st.session_state["simulador_import_warnings"] = import_warnings
+            st.session_state["simulador_arquivo_nome"] = arquivo_trades.name
+
+        imported_ops = st.session_state.get("simulador_ops_importadas", pd.DataFrame())
+        import_warnings = st.session_state.get("simulador_import_warnings", [])
+
+        if arquivo_trades is not None:
+            if imported_ops.empty:
+                st.warning("Não foi possível identificar operações válidas no arquivo importado.")
+            else:
+                st.success(f"Arquivo importado com sucesso: {len(imported_ops)} operação(ões) detectada(s).")
+                st.caption("Pré-visualização das operações importadas (você pode editar na tabela abaixo):")
+                st.dataframe(imported_ops, hide_index=True)
+            for aviso in import_warnings:
+                st.caption(f"⚠️ {aviso}")
+
+            if st.button("Limpar importação", use_container_width=False):
+                st.session_state["simulador_ops_importadas"] = pd.DataFrame()
+                st.session_state["simulador_import_warnings"] = []
+                st.session_state["simulador_arquivo_nome"] = None
+                st.rerun()
+
         with st.form("form_simulador_fluxo"):
             ipca_padrao = st.number_input(
                 "IPCA médio esperado (a.a., %) – aplicado a todas as operações",
@@ -385,19 +620,44 @@ class SimuladorPage(BasePage):
                 step=0.50,
             )
 
-            n_operacoes = int(st.number_input("Número de operações (compras diferentes)", min_value=1, max_value=20, value=2, step=1))
+            valor_padrao_n = int(imported_ops.shape[0]) if not imported_ops.empty else 2
+            valor_padrao_n = max(1, min(20, valor_padrao_n))
+            n_operacoes = int(
+                st.number_input(
+                    "Número de operações (compras diferentes)",
+                    min_value=1,
+                    max_value=20,
+                    value=valor_padrao_n,
+                    step=1,
+                )
+            )
 
             st.subheader("Operações – parâmetros em tabela")
-            dados_ops = []
-            for i in range(n_operacoes):
-                dados_ops.append({
-                    "Operação": i + 1,
-                    "Data compra": pd.to_datetime(data_padrao),
-                    "Ano conversão": vencimentos_validos[min(i, len(vencimentos_validos) - 1)],
-                    "Taxa real (%)": 7.0,
-                    "Valor investido (R$)": 10000.0 if i == 0 else 0.0,
-                })
-            df_ops = pd.DataFrame(dados_ops)
+            if imported_ops.empty:
+                dados_ops = []
+                for i in range(n_operacoes):
+                    dados_ops.append({
+                        "Operação": i + 1,
+                        "Data compra": pd.to_datetime(data_padrao),
+                        "Ano conversão": vencimentos_validos[min(i, len(vencimentos_validos) - 1)],
+                        "Taxa real (%)": 7.0,
+                        "Valor investido (R$)": 10000.0 if i == 0 else 0.0,
+                    })
+                df_ops = pd.DataFrame(dados_ops)
+            else:
+                df_ops = imported_ops.copy()
+                if len(df_ops) < n_operacoes:
+                    for i in range(len(df_ops), n_operacoes):
+                        df_ops.loc[i] = {
+                            "Operação": i + 1,
+                            "Data compra": pd.to_datetime(data_padrao),
+                            "Ano conversão": vencimentos_validos[min(i, len(vencimentos_validos) - 1)],
+                            "Taxa real (%)": 7.0,
+                            "Valor investido (R$)": 0.0,
+                        }
+                else:
+                    df_ops = df_ops.head(n_operacoes).copy()
+                df_ops["Operação"] = np.arange(1, len(df_ops) + 1)
 
             edited_ops = st.data_editor(
                 df_ops,
@@ -736,7 +996,7 @@ class PlanejadorPage(BasePage):
                 <h3>Resumo da Aposentadoria</h3>
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
                     {kpi_card("Início da renda", f"{metrics['idade_inicio_real']} anos", f"Ano {metrics['ano_inicio_pagamento']}")}
-                    {kpi_card("Início da aposentadoria", f"{idade_aposentadoria} anos", f"Ano {metrics["data_aposentadoria"].year}")}
+                    {kpi_card("Início da aposentadoria", f"{idade_aposentadoria} anos", f"Ano {metrics['data_aposentadoria'].year}")}
                     {kpi_card("Fim da renda", f"{metrics['idade_fim_real']} anos", f"Ano {metrics['ano_fim_pagamento']}")}
                     {kpi_card("Duração total", f"{metrics['duracao_anos']} anos", f"{metrics['duracao_meses']} meses")}
                 </div>
@@ -937,5 +1197,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 
