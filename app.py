@@ -216,61 +216,72 @@ def _build_candidate_headers(raw: pd.DataFrame, header_idx: int) -> list[list[st
     return unique
 
 
-def parse_tesouro_trades_xlsx(file_bytes: bytes, file_name: str) -> tuple[pd.DataFrame, list[str]]:
+def parse_tesouro_trades_xlsx(files) -> tuple[pd.DataFrame, list[str]]:
+
     warnings = []
     rows = []
 
-    try:
-        workbook = pd.ExcelFile(io.BytesIO(file_bytes))
-    except Exception as exc:
-        return pd.DataFrame(), [f"Falha ao abrir arquivo Excel: {exc}"]
-
     anos_validos = [2030, 2035, 2040, 2045, 2050, 2055, 2060, 2065]
 
-    ano_detectado = None
-    nome_match = re.search(r"(20\d{2})", file_name)
-    if nome_match:
-        ano = int(nome_match.group(1))
-        if ano in anos_validos:
-            ano_detectado = ano
+    for file in files:
 
-    for sheet in workbook.sheet_names:
+        try:
+            workbook = pd.ExcelFile(file)
+        except Exception as exc:
+            warnings.append(f"{file.name}: erro ao abrir Excel ({exc})")
+            continue
 
-        df = pd.read_excel(workbook, sheet_name=sheet, header=None)
+        ano_detectado = None
+        nome_match = re.search(r"(20\d{2})", file.name)
+        if nome_match:
+            ano = int(nome_match.group(1))
+            if ano in anos_validos:
+                ano_detectado = ano
 
-        for _, r in df.iterrows():
+        for sheet in workbook.sheet_names:
 
-            data = pd.to_datetime(r[0], dayfirst=True, errors="coerce")
+            df = pd.read_excel(workbook, sheet_name=sheet, header=None)
 
-            if pd.isna(data):
-                continue
+            for _, r in df.iterrows():
 
-            valor = _parse_ptbr_number(r[3])
+                data = pd.to_datetime(r[0], dayfirst=True, errors="coerce")
 
-            if valor is None or valor <= 0:
-                continue
+                if pd.isna(data):
+                    continue
 
-            if ano_detectado is None:
-                ano_detectado = _extract_renda_mais_ano(df.stack())
+                valor = _parse_ptbr_number(r[3])
 
-            if ano_detectado not in anos_validos:
-                ano_detectado = anos_validos[-1]
+                if valor is None or valor <= 0:
+                    continue
 
-            rows.append({
-                "Data compra": data,
-                "Ano conversão": ano_detectado,
-                "Taxa real (%)": 7.0,
-                "Valor investido (R$)": float(valor),
-            })
+                taxa_real = None
+                if len(r) > 4:
+                    taxa_real = _parse_taxa_real_percent(r[4])
+
+                if taxa_real is None:
+                    taxa_real = 7.0
+
+                if ano_detectado is None:
+                    ano_detectado = _extract_renda_mais_ano(df.stack())
+
+                if ano_detectado not in anos_validos:
+                    ano_detectado = anos_validos[-1]
+
+                rows.append({
+                    "Data compra": data,
+                    "Ano conversão": ano_detectado,
+                    "Taxa real (%)": float(taxa_real),
+                    "Valor investido (R$)": float(valor),
+                })
 
     if not rows:
-        warnings.append("Nenhuma operação foi identificada no arquivo importado.")
+        warnings.append("Nenhuma operação foi identificada nos arquivos importados.")
         return pd.DataFrame(), warnings
 
     df_final = pd.DataFrame(rows)
     df_final.insert(0, "Operação", np.arange(1, len(df_final) + 1))
 
-    return df_final, warnings  
+    return df_final, warnings
 
 
 # ==============================
@@ -514,8 +525,9 @@ class SimuladorPage(BasePage):
 
         st.markdown("**Importar operações do Extrato Analítico (Tesouro Direto)**")
         arquivo_trades = st.file_uploader(
-            "Selecione o arquivo .xlsx exportado do Tesouro Direto",
+            "Selecione o(s) arquivo(s) .xlsx exportado(s) do Tesouro Direto",
             type=["xlsx"],
+            accept_multiple_files=True,
             help="Layout esperado: planilha de Extrato Analítico com colunas como 'Data da aplicação' e 'Valor investido (R$)'.",
             key="simulador_upload_trades",
         )
