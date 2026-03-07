@@ -535,13 +535,12 @@ class SimuladorPage(BasePage):
         if "simulador_ops_importadas" not in st.session_state:
             st.session_state["simulador_ops_importadas"] = pd.DataFrame()
             st.session_state["simulador_import_warnings"] = []
-            st.session_state["simulador_arquivo_nome"] = None
+            #st.session_state["simulador_arquivo_nome"] = None
 
-        if arquivo_trades is not None and arquivo_trades.name != st.session_state.get("simulador_arquivo_nome"):
+        if arquivo_trades:
             imported_ops, import_warnings = parse_tesouro_trades_xlsx(arquivo_trades)
             st.session_state["simulador_ops_importadas"] = imported_ops
             st.session_state["simulador_import_warnings"] = import_warnings
-            st.session_state["simulador_arquivo_nome"] = arquivo_trades.name
 
         imported_ops = st.session_state.get("simulador_ops_importadas", pd.DataFrame())
         import_warnings = st.session_state.get("simulador_import_warnings", [])
@@ -559,7 +558,7 @@ class SimuladorPage(BasePage):
             if st.button("Limpar importação", use_container_width=False):
                 st.session_state["simulador_ops_importadas"] = pd.DataFrame()
                 st.session_state["simulador_import_warnings"] = []
-                st.session_state["simulador_arquivo_nome"] = None
+                #st.session_state["simulador_arquivo_nome"] = None
                 st.rerun()
 
         with st.form("form_simulador_fluxo"):
