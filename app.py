@@ -534,13 +534,24 @@ class SimuladorPage(BasePage):
 
         if "simulador_ops_importadas" not in st.session_state:
             st.session_state["simulador_ops_importadas"] = pd.DataFrame()
+        
+        if "simulador_import_warnings" not in st.session_state:
             st.session_state["simulador_import_warnings"] = []
-            #st.session_state["simulador_arquivo_nome"] = None
+        
+        if "simulador_hash_arquivos" not in st.session_state:
+            st.session_state["simulador_hash_arquivos"] = None
 
         if arquivo_trades:
-            imported_ops, import_warnings = parse_tesouro_trades_xlsx(arquivo_trades)
-            st.session_state["simulador_ops_importadas"] = imported_ops
-            st.session_state["simulador_import_warnings"] = import_warnings
+        
+            hash_atual = tuple(sorted(f.name for f in arquivo_trades))
+        
+            if hash_atual != st.session_state["simulador_hash_arquivos"]:
+        
+                imported_ops, import_warnings = parse_tesouro_trades_xlsx(arquivo_trades)
+        
+                st.session_state["simulador_ops_importadas"] = imported_ops
+                st.session_state["simulador_import_warnings"] = import_warnings
+                st.session_state["simulador_hash_arquivos"] = hash_atual
 
         imported_ops = st.session_state.get("simulador_ops_importadas", pd.DataFrame())
         import_warnings = st.session_state.get("simulador_import_warnings", [])
@@ -555,11 +566,15 @@ class SimuladorPage(BasePage):
             for aviso in import_warnings:
                 st.caption(f"⚠️ {aviso}")
 
-            if st.button("Limpar importação", use_container_width=False):
-                st.session_state["simulador_ops_importadas"] = pd.DataFrame()
-                st.session_state["simulador_import_warnings"] = []
-                #st.session_state["simulador_arquivo_nome"] = None
-                st.rerun()
+        if st.button("Limpar importação", use_container_width=False):
+        
+            st.session_state["simulador_ops_importadas"] = pd.DataFrame()
+            st.session_state["simulador_import_warnings"] = []
+            st.session_state["simulador_hash_arquivos"] = None
+        
+            st.session_state["simulador_upload_trades"] = None
+        
+            st.rerun()
 
         with st.form("form_simulador_fluxo"):
             ipca_padrao = st.number_input(
